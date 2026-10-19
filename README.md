@@ -7,8 +7,8 @@ declaración de domicilio, evaluación de competencias, matriz de sustitución y
 
 | Parte | Archivo | Dónde corre |
 |---|---|---|
-| Interfaz | `index.html` | Vercel la sirve como página estática. No contiene datos personales ni contraseñas. |
-| API | `api/index.py` (Flask) | Función de Python en Vercel. Valida sesión y permisos en cada pedido. |
+| Interfaz | `index.html` | No contiene datos personales ni contraseñas. |
+| API | `app.py` (Flask) | Función de Python en Vercel. Valida sesión y permisos en cada pedido y entrega la interfaz. |
 | Datos | PostgreSQL | Base en la nube (Neon), conectada desde el Marketplace de Vercel. |
 
 - Contraseñas guardadas con PBKDF2; sesiones con cookie `HttpOnly` y `SameSite=Strict`.
@@ -38,7 +38,7 @@ El `.gitignore` ya los excluye. Los datos se cargan desde la pantalla **⚙ Dato
 pip install -r requirements.txt
 set ADMIN_USERNAME=admin
 set ADMIN_PASSWORD=prueba1234
-python api/index.py
+python app.py
 ```
 
 Abre en http://127.0.0.1:5000 con una base SQLite local (`rrhh_local.db`).
