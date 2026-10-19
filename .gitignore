@@ -1,0 +1,11 @@
+# Nunca subir datos ni bases locales
+*.db
+*.json.migrado
+datos_iniciales.json
+LOGITEx_*.json
+LOGITEx_datos/
+rrhh_local.db
+.env
+.env.*
+__pycache__/
+.vercel
