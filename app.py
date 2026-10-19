@@ -55,7 +55,19 @@ COLECCIONES = ["vacPeriodos", "evalData", "empEquiposData", "fotos", "tabPlantas
                "tabSectores", "tabPuestos", "tabActividades", "inventarioITAplicado"]
 
 DIR_RAIZ = os.path.dirname(os.path.abspath(__file__))
-DB_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or ""
+def _buscar_url_db():
+    """Neon/Vercel pueden crear la variable con distintos nombres (o con un prefijo)."""
+    for nombre in ("DATABASE_URL", "POSTGRES_URL", "NEON_DATABASE_URL", "POSTGRES_PRISMA_URL", "DATABASE_URL_UNPOOLED"):
+        if os.environ.get(nombre, "").startswith(("postgres://", "postgresql://")):
+            return nombre, os.environ[nombre]
+    for nombre, valor in sorted(os.environ.items()):
+        if nombre.endswith(("DATABASE_URL", "POSTGRES_URL")) and valor.startswith(("postgres://", "postgresql://")):
+            return nombre, valor
+    return "", ""
+
+
+DB_VAR, DB_URL = _buscar_url_db()
+EN_VERCEL = bool(os.environ.get("VERCEL"))
 ES_PG = DB_URL.startswith(("postgres://", "postgresql://"))
 
 app = Flask(__name__, static_folder=None)
@@ -253,11 +265,15 @@ def antes():
         origen = request.headers.get("Origin")
         if origen and urllib.parse.urlparse(origen).netloc != request.host:
             return jsonify(ok=False, error="Origen no permitido."), 403
+    if EN_VERCEL and not ES_PG:
+        return jsonify(ok=False, error="Falta conectar la base de datos: en Vercel no existe la variable DATABASE_URL. "
+                                       "Conectá Neon desde Storage y hacé Redeploy."), 503
     try:
         inicializar()
     except Exception as e:  # base caída o mal configurada
-        app.logger.error("No se pudo conectar a la base: %r", e)
-        return jsonify(ok=False, error="No se pudo conectar a la base de datos. Revisá DATABASE_URL en Vercel."), 503
+        app.logger.error("No se pudo conectar a la base (%s): %r", DB_VAR or "SQLite", e)
+        return jsonify(ok=False, error=f"La base de datos rechazó la conexión ({type(e).__name__}). "
+                                       "El detalle está en Vercel → Logs."), 503
     return None
 
 
