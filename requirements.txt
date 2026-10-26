@@ -1,3 +1,5 @@
 Flask==3.1.3
 pg8000==1.31.5
+# scramp 1.5.0 quitó make_channel_binding, que pg8000 1.31.5 usa para conectarse a Neon
+scramp==1.4.17
 openpyxl==3.1.5
