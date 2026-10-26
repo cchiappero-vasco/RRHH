@@ -11,6 +11,7 @@ Variables de entorno (Vercel → Settings → Environment Variables)
   DATABASE_URL        la crea sola la integración de Neon (también se acepta POSTGRES_URL)
   ADMIN_USERNAME      usuario administrador inicial (solo se usa si no hay ningún usuario)
   ADMIN_PASSWORD      su contraseña (mínimo 8 caracteres)
+  ADMIN_RESET_PASSWORD  opcional: restablece la contraseña de ADMIN_USERNAME (se aplica una vez)
 
 Sin DATABASE_URL usa un SQLite local (solo para pruebas en tu PC):
   pip install -r requirements.txt
@@ -179,8 +180,36 @@ def inicializar():
             db.ejecutar("INSERT INTO usuarios (id, username, nombre, rol, activo, pass_hash, creado) VALUES (?,?,?,?,?,?,?)",
                         ("u" + secrets.token_hex(6), user, user, "admin", 1, hash_password(clave), ahora_iso()))
             registrar(db, "sistema", "crear_usuario", user + " (administrador inicial)")
+        restablecer_admin(db, user)
         db.ejecutar("DELETE FROM sesiones WHERE expira < ?", (time.time(),))
     _inicializada = True
+
+
+def restablecer_admin(db, user):
+    """Restablece la contraseña del administrador con la variable ADMIN_RESET_PASSWORD.
+
+    Se aplica una sola vez por cada valor nuevo de la variable: si después cambiás la
+    contraseña desde el sistema, no se vuelve a pisar en el próximo arranque.
+    """
+    clave = os.environ.get("ADMIN_RESET_PASSWORD") or ""
+    if not user or len(clave) < 8:
+        return
+    marca = hashlib.sha256(f"{user}:{clave}".encode()).hexdigest()
+    previa = db.fila("SELECT valor FROM meta WHERE clave = 'admin_reset'")
+    if previa and previa["valor"] == marca:
+        return
+    r = db.fila("SELECT id FROM usuarios WHERE username = ?", (user,))
+    if r:
+        db.ejecutar("UPDATE usuarios SET pass_hash = ?, activo = 1, rol = 'admin' WHERE id = ?", (hash_password(clave), r["id"]))
+        db.ejecutar("DELETE FROM sesiones WHERE usuario_id = ?", (r["id"],))
+    else:
+        db.ejecutar("INSERT INTO usuarios (id, username, nombre, rol, activo, pass_hash, creado) VALUES (?,?,?,?,?,?,?)",
+                    ("u" + secrets.token_hex(6), user, user, "admin", 1, hash_password(clave), ahora_iso()))
+    # Levanta el bloqueo por intentos fallidos de ese usuario
+    db.ejecutar("DELETE FROM historial WHERE accion = 'login_fallido' AND usuario = ?", (user,))
+    db.ejecutar("INSERT INTO meta (clave, valor) VALUES ('admin_reset', ?) "
+                "ON CONFLICT (clave) DO UPDATE SET valor = excluded.valor", (marca,))
+    registrar(db, "sistema", "reset_password", f"{user} (variable ADMIN_RESET_PASSWORD)")
 
 
 def registrar(db, usuario, accion, detalle=""):
