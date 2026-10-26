@@ -1589,9 +1589,10 @@ function showBirthdayPanel(){
     var cumple=new Date(hoy.getFullYear(),parseInt(fp[1])-1,parseInt(fp[2]));
     if(cumple<hoyN)cumple=new Date(hoy.getFullYear()+1,parseInt(fp[1])-1,parseInt(fp[2]));
     var diff=Math.round((cumple-hoyN)/864e5);
-    var edad=hoy.getFullYear()-parseInt(fp[0])+(cumple.getFullYear()>hoy.getFullYear()?-1:0);
-    if(diff===0)alerts.push({e:e,diff:0,edad:edad+1,lab:'¡HOY cumple años!'});
-    else if(diff<=7)proximos.push({e:e,diff:diff,edad:edad+1,lab:'En '+diff+' día'+(diff!==1?'s':'')});
+    // Edad que cumple en ese cumpleaños = año del cumpleaños - año de nacimiento
+    var edad=cumple.getFullYear()-parseInt(fp[0]);
+    if(diff===0)alerts.push({e:e,diff:0,edad:edad,lab:'¡HOY cumple años!'});
+    else if(diff<=7)proximos.push({e:e,diff:diff,edad:edad,lab:'En '+diff+' día'+(diff!==1?'s':'')});
   });
   var wrap=document.getElementById('bday-panel-wrap');
   if(!wrap)return;
