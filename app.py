@@ -29,6 +29,7 @@ import secrets
 import sqlite3
 import ssl
 import time
+import unicodedata
 import urllib.parse
 
 from flask import Flask, Response, jsonify, request, send_file
@@ -173,6 +174,8 @@ def inicializar():
     with Db() as db:
         for sql in ESQUEMA:
             db.ejecutar(sql)
+        if "plantas" not in columnas(db, "usuarios"):
+            db.ejecutar("ALTER TABLE usuarios ADD COLUMN plantas TEXT")
         hay = db.fila("SELECT COUNT(*) AS n FROM usuarios")["n"]
         user = (os.environ.get("ADMIN_USERNAME") or "").strip().lower()
         clave = os.environ.get("ADMIN_PASSWORD") or ""
@@ -183,6 +186,12 @@ def inicializar():
         restablecer_admin(db, user)
         db.ejecutar("DELETE FROM sesiones WHERE expira < ?", (time.time(),))
     _inicializada = True
+
+
+def columnas(db, tabla):
+    if ES_PG:
+        return {r["c"] for r in db.filas("SELECT column_name AS c FROM information_schema.columns WHERE table_name = ?", (tabla,))}
+    return {r["name"] for r in db.filas(f"PRAGMA table_info({tabla})")}
 
 
 def restablecer_admin(db, user):
@@ -244,8 +253,32 @@ def _hash_token(token):
 
 
 def _usuario_publico(r):
+    try:
+        plantas = json.loads(r.get("plantas") or "[]")
+    except ValueError:
+        plantas = []
     return {"id": r["id"], "username": r["username"], "nombre": r["nombre"], "rol": r["rol"],
-            "activo": "1" if r["activo"] else "0", "ultimo_acceso": r.get("ultimo_acceso")}
+            "activo": "1" if r["activo"] else "0", "ultimo_acceso": r.get("ultimo_acceso"),
+            "plantas": plantas if r["rol"] != "admin" else []}
+
+
+# ── Plantas visibles por usuario ──
+# Administrador: todas. Operador sin plantas asignadas: todas. Operador con plantas: solo esas.
+COLECCIONES_POR_EMPLEADO = ("vacPeriodos", "evalData", "empEquiposData", "fotos")
+COLECCIONES_COMPARTIDAS = ("tabPlantas", "tabSectores", "tabPuestos", "tabActividades", "inventarioITAplicado")
+
+
+def _norm(texto):
+    t = unicodedata.normalize("NFKD", str(texto or ""))
+    return "".join(c for c in t if not unicodedata.combining(c)).strip().lower()
+
+
+def filtro_plantas(u):
+    """Devuelve una función planta -> bool, o None si el usuario ve todas las plantas."""
+    if not u or u.get("rol") == "admin" or not u.get("plantas"):
+        return None
+    permitidas = {_norm(p) for p in u["plantas"]}
+    return lambda planta: _norm(planta) in permitidas
 
 
 def usuario_actual(db=None):
@@ -352,10 +385,17 @@ def version_datos(db, bloquear=False):
     return int(db.fila(sql)["valor"])
 
 
-def leer_datos(db):
+def leer_datos(db, u=None):
     datos = {"empleados": [json.loads(r["datos"]) for r in db.filas("SELECT datos FROM empleados ORDER BY nombre")]}
     for r in db.filas("SELECT clave, datos FROM colecciones"):
         datos[r["clave"]] = json.loads(r["datos"])
+    ver = filtro_plantas(u)
+    if ver:
+        datos["empleados"] = [e for e in datos["empleados"] if ver(e.get("planta"))]
+        ids = {e["id"] for e in datos["empleados"]}
+        for clave in COLECCIONES_POR_EMPLEADO:
+            if isinstance(datos.get(clave), dict):
+                datos[clave] = {k: v for k, v in datos[clave].items() if k in ids}
     return datos
 
 
@@ -370,7 +410,7 @@ def guardar_respaldo(db, usuario, motivo):
         db.ejecutar("DELETE FROM respaldos WHERE id = ?", (r["id"],))
 
 
-def escribir_datos(db, datos):
+def escribir_datos(db, datos, u=None):
     empleados = datos.get("empleados")
     if not isinstance(empleados, list):
         raise ValueError("Falta la lista de empleados.")
@@ -382,7 +422,17 @@ def escribir_datos(db, datos):
             raise ValueError(f"Id de empleado repetido: {e['id']}")
         ids.add(e["id"])
     ts = ahora_iso()
-    existentes = {r["id"]: r["datos"] for r in db.filas("SELECT id, datos FROM empleados")}
+    filas = db.filas("SELECT id, datos, planta FROM empleados")
+    existentes = {r["id"]: r["datos"] for r in filas}
+    ver = filtro_plantas(u)
+    if ver:
+        planta_actual = {r["id"]: r["planta"] for r in filas}
+        for e in empleados:
+            if not ver(e.get("planta")):
+                raise ValueError(f"No tenés permiso para cargar empleados en la planta {e.get('planta') or '(sin planta)'}.")
+            if e["id"] in planta_actual and not ver(planta_actual[e["id"]]):
+                raise ValueError("No tenés permiso para modificar empleados de otra planta.")
+        mios = {i for i, p in planta_actual.items() if ver(p)}
     for e in empleados:
         js = json.dumps(e, ensure_ascii=False, sort_keys=True)
         if existentes.get(e["id"]) == js:
@@ -393,14 +443,24 @@ def escribir_datos(db, datos):
             "sector=excluded.sector, activo=excluded.activo, datos=excluded.datos, actualizado=excluded.actualizado",
             (e["id"], str(e.get("legajo", "")), e.get("nombre", ""), e.get("planta", ""), e.get("sector", ""),
              1 if _es_activo(e) else 0, js, ts))
-    borrados = set(existentes) - ids
+    borrados = (mios if ver else set(existentes)) - ids
     for emp_id in borrados:
         db.ejecutar("DELETE FROM empleados WHERE id = ?", (emp_id,))
     for clave in COLECCIONES:
-        if clave in datos:
-            db.ejecutar("INSERT INTO colecciones (clave, datos, actualizado) VALUES (?,?,?) "
-                        "ON CONFLICT (clave) DO UPDATE SET datos=excluded.datos, actualizado=excluded.actualizado",
-                        (clave, json.dumps(datos[clave], ensure_ascii=False), ts))
+        if clave not in datos:
+            continue
+        valor = datos[clave]
+        if ver:
+            if clave in COLECCIONES_COMPARTIDAS or not isinstance(valor, dict):
+                continue  # las tablas compartidas solo las cambian usuarios sin restricción
+            fila = db.fila("SELECT datos FROM colecciones WHERE clave = ?", (clave,))
+            base = json.loads(fila["datos"]) if fila else {}
+            afectados = mios | ids
+            valor = {k: v for k, v in (base if isinstance(base, dict) else {}).items() if k not in afectados}
+            valor.update({k: v for k, v in datos[clave].items() if k in ids})
+        db.ejecutar("INSERT INTO colecciones (clave, datos, actualizado) VALUES (?,?,?) "
+                    "ON CONFLICT (clave) DO UPDATE SET datos=excluded.datos, actualizado=excluded.actualizado",
+                    (clave, json.dumps(valor, ensure_ascii=False), ts))
     nueva = version_datos(db) + 1
     db.ejecutar("UPDATE meta SET valor = ? WHERE clave = 'version_datos'", (str(nueva),))
     return nueva, len(borrados)
@@ -457,9 +517,9 @@ def api_logout():
 
 @app.get("/api/datos")
 def api_leer():
-    requiere_usuario()
+    u = requiere_usuario()
     with Db() as db:
-        return jsonify(ok=True, version=version_datos(db), datos=leer_datos(db))
+        return jsonify(ok=True, version=version_datos(db), datos=leer_datos(db, u))
 
 
 @app.post("/api/datos")
@@ -475,7 +535,7 @@ def api_guardar():
         hoy = datetime.date.today().isoformat()
         if not db.fila("SELECT 1 AS x FROM respaldos WHERE fecha >= ? AND motivo = 'diario'", (hoy,)):
             guardar_respaldo(db, "sistema", "diario")
-        nueva, borrados = escribir_datos(db, cuerpo.get("datos") or {})
+        nueva, borrados = escribir_datos(db, cuerpo.get("datos") or {}, u)
         det = f"{len((cuerpo.get('datos') or {}).get('empleados', []))} empleados" + (f", {borrados} eliminados" if borrados else "")
         registrar(db, u["username"], "guardar", det)
     return jsonify(ok=True, version=nueva)
@@ -520,6 +580,10 @@ def api_guardar_usuario():
     rol = d.get("rol") if d.get("rol") in ("admin", "operador") else "operador"
     activo = 0 if str(d.get("activo", "1")) == "0" else 1
     uid = d.get("id")
+    plantas = d.get("plantas") or []
+    if not isinstance(plantas, list) or not all(isinstance(p, str) and 0 < len(p.strip()) <= 60 for p in plantas):
+        raise ValueError("Las plantas del usuario no son válidas.")
+    plantas = [] if rol == "admin" else sorted({p.strip() for p in plantas}, key=_norm)
     if not user or not nombre:
         raise ValueError("Usuario y nombre son obligatorios.")
     if not all(c.isalnum() or c in "._-" for c in user):
@@ -535,20 +599,21 @@ def api_guardar_usuario():
                 raise ValueError("Usuario inexistente.")
             if uid == actor["id"] and (rol != "admin" or not activo):
                 raise ValueError("No podés quitarte el rol de administrador ni desactivarte.")
-            db.ejecutar("UPDATE usuarios SET username=?, nombre=?, rol=?, activo=? WHERE id=?", (user, nombre, rol, activo, uid))
+            db.ejecutar("UPDATE usuarios SET username=?, nombre=?, rol=?, activo=?, plantas=? WHERE id=?",
+                        (user, nombre, rol, activo, json.dumps(plantas, ensure_ascii=False), uid))
             if clave:
                 db.ejecutar("UPDATE usuarios SET pass_hash=? WHERE id=?", (hash_password(clave), uid))
                 if uid != actor["id"]:
                     db.ejecutar("DELETE FROM sesiones WHERE usuario_id=?", (uid,))
             if not activo:
                 db.ejecutar("DELETE FROM sesiones WHERE usuario_id=?", (uid,))
-            registrar(db, actor["username"], "editar_usuario", user)
+            registrar(db, actor["username"], "editar_usuario", user + (" — plantas: " + ", ".join(plantas) if plantas else ""))
         else:
             if not clave:
                 raise ValueError("La contraseña es obligatoria para un usuario nuevo.")
             uid = "u" + secrets.token_hex(6)
-            db.ejecutar("INSERT INTO usuarios (id, username, nombre, rol, activo, pass_hash, creado) VALUES (?,?,?,?,?,?,?)",
-                        (uid, user, nombre, rol, activo, hash_password(clave), ahora_iso()))
+            db.ejecutar("INSERT INTO usuarios (id, username, nombre, rol, activo, pass_hash, creado, plantas) VALUES (?,?,?,?,?,?,?,?)",
+                        (uid, user, nombre, rol, activo, hash_password(clave), ahora_iso(), json.dumps(plantas, ensure_ascii=False)))
             registrar(db, actor["username"], "crear_usuario", user)
         return jsonify(ok=True, id=uid, usuarios=_listar(db))
 
@@ -654,9 +719,9 @@ def _fila(e):
     return out
 
 
-def _empleados():
+def _empleados(u=None):
     with Db() as db:
-        return leer_datos(db)["empleados"]
+        return leer_datos(db, u)["empleados"]
 
 
 def _nombre(ext):
@@ -665,11 +730,11 @@ def _nombre(ext):
 
 @app.get("/api/exportar/csv")
 def api_csv():
-    requiere_usuario()
+    u = requiere_usuario()
     buf = io.StringIO()
     w = csv.writer(buf, delimiter=";")
     w.writerow([c for _, c, _ in CAMPOS])
-    for e in _empleados():
+    for e in _empleados(u):
         w.writerow(_fila(e))
     return Response("﻿" + buf.getvalue(), mimetype="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="{_nombre("csv")}"'})
@@ -677,10 +742,10 @@ def api_csv():
 
 @app.get("/api/exportar/excel")
 def api_excel():
-    requiere_usuario()
+    u = requiere_usuario()
     if not XLSX:
         raise ErrorAPI(500, "Falta openpyxl en requirements.txt.")
-    empleados = _empleados()
+    empleados = _empleados(u)
     libro = openpyxl.Workbook()
     h = libro.active
     h.title = "Personal"
@@ -735,7 +800,7 @@ def api_excel():
 def api_backup():
     u = requiere_usuario()
     with Db() as db:
-        datos = {"_version": APP_VERSION, "_exportadoEn": ahora_iso(), "_exportadoPor": u["username"], **leer_datos(db)}
+        datos = {"_version": APP_VERSION, "_exportadoEn": ahora_iso(), "_exportadoPor": u["username"], **leer_datos(db, u)}
         registrar(db, u["username"], "descargar_backup")
     nombre = f"LOGITEx_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.json"
     return Response(json.dumps(datos, ensure_ascii=False, indent=1), mimetype="application/json",
