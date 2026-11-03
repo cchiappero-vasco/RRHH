@@ -677,6 +677,8 @@ CAMPOS = [
     ("celularLab", "Celular laboral", 16), ("cobertura", "Cobertura médica", 16), ("idioma", "Idioma", 16),
     ("direccion", "Dirección", 40), ("banco", "Banco", 14), ("cbu", "CBU", 24), ("alias", "Alias CBU", 18),
     ("consultora", "Consultora", 16), ("consultoraInicio", "Inicio consultora", 14), ("consultoraFin", "Fin consultora", 14),
+    ("motivoBaja", "Motivo de baja", 22), ("telFamiliar", "Tel. contacto familiar", 18),
+    ("relacionFamiliar", "Relación contacto", 16), ("estadoCivil", "Estado civil", 18), ("hijos", "Hijos", 8),
 ]
 FECHAS = {"fechaNac", "inicio", "fin", "consultoraInicio", "consultoraFin"}
 
@@ -714,6 +716,8 @@ def _fila(e):
             out.append(_fecha_ar(e.get(k, "")))
         else:
             v = e.get(k, "") or ""
+            if isinstance(v, list):
+                v = ", ".join(str(x) for x in v)
             # Evita que Excel interprete un valor como fórmula
             out.append("'" + v if isinstance(v, str) and v[:1] in ("=", "+", "-", "@") else v)
     return out

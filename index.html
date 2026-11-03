@@ -575,6 +575,10 @@ body.dark .info-green{border-color:#1d4a30;color:var(--text)}
 
 
 
+/* ---------- Datos familiares ---------- */
+.ecivil{display:flex;flex-wrap:wrap;gap:4px 12px;min-height:38px;align-items:center;padding:4px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2)}
+.ecivil label{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text);text-transform:none;letter-spacing:0;font-weight:500;margin:0;cursor:pointer}
+.ecivil input{accent-color:var(--primary);width:15px;height:15px}
 /* ---------- Plantas por usuario ---------- */
 .u-plantas{display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2)}
 .u-plantas label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);text-transform:none;letter-spacing:0;font-weight:500;cursor:pointer}
@@ -638,7 +642,7 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
     <button class="login-btn" onclick="doLogin()">Ingresar</button>
     <div id="login-error" class="login-error"><i class="fa-solid fa-circle-xmark"></i> Usuario o contraseña incorrectos</div>
     <div id="login-info" class="login-import-ok"></div>
-    <div class="login-ver">v14 web &mdash; LOGITEx RRHH &mdash; 2026</div>
+    <div class="login-ver">v15 web &mdash; LOGITEx RRHH &mdash; 2026</div>
   </div>
 </div>
 
@@ -1074,6 +1078,17 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
             <div class="form-group full"><label>Domicilio</label><input id="f-dir" type="text"></div>
             <div class="form-group"><label>Localidad</label><input id="f-localidad" type="text"></div>
             <div class="form-group"><label>Provincia</label><input id="f-provincia" type="text"></div>
+            <div class="form-group"><label>Teléfono contacto familiar</label><input id="f-tel-fam" type="tel" placeholder="Ej: 351 555-1234"></div>
+            <div class="form-group"><label>Relación con el contacto</label><input id="f-rel-fam" type="text" placeholder="Ej: Madre, Esposo/a, Hermano/a" list="rel-fam-opciones">
+              <datalist id="rel-fam-opciones"><option>Madre</option><option>Padre</option><option>Esposo/a</option><option>Pareja</option><option>Hijo/a</option><option>Hermano/a</option><option>Otro familiar</option></datalist></div>
+            <div class="form-group"><label id="f-ecivil-lbl">Estado civil</label>
+              <div class="ecivil" id="f-ecivil" role="group" aria-labelledby="f-ecivil-lbl">
+                <label><input type="checkbox" value="Soltero/a"> Soltero/a</label>
+                <label><input type="checkbox" value="Casado/a"> Casado/a</label>
+                <label><input type="checkbox" value="En pareja"> En pareja</label>
+                <label><input type="checkbox" value="Viudo/a"> Viudo/a</label>
+              </div></div>
+            <div class="form-group"><label>Cantidad de hijos</label><input id="f-hijos" type="number" min="0" max="30" step="1" inputmode="numeric"></div>
           </div>
         </div>
         <!-- TAB LABORAL -->
@@ -1090,6 +1105,8 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
               <select id="f-cat"><option value="">Seleccionar...</option><option>Gerente</option><option>Coordinador</option><option>Analista Senior</option><option>Analista Semi Senior</option><option>Analista Junior</option><option>Analista</option></select></div>
             <div class="form-group"><label>Fecha de ingreso *</label><input id="f-inicio" type="date"></div>
             <div class="form-group"><label>Fecha de baja</label><input id="f-fin" type="date"></div>
+            <div class="form-group"><label>Motivo de la baja</label><input id="f-motivo-baja" type="text" placeholder="Ej: Renuncia, Despido, Fin de contrato" list="motivo-baja-opciones">
+              <datalist id="motivo-baja-opciones"><option>Renuncia</option><option>Despido con causa</option><option>Despido sin causa</option><option>Fin de contrato</option><option>Jubilación</option><option>Mutuo acuerdo</option><option>Fallecimiento</option></datalist></div>
             <div class="form-group"><label>Consultora / Tercero</label>
               <input id="f-consultora" type="text" placeholder="Ej: Randstad, Manpower..." oninput="toggleConsultoraFechas()"></div>
             <div class="form-group" id="grupo-consultora-inicio" style="display:none"><label>Inicio en consultora</label>
@@ -2800,21 +2817,36 @@ function toggleConsultoraFechas(){
     var cf=document.getElementById('f-consultora-fin');if(cf)cf.value='';
   }
 }
+function setEstadoCivil(v){
+  var lista=Array.isArray(v)?v:(v?[v]:[]);
+  document.querySelectorAll('#f-ecivil input').forEach(function(c){c.checked=lista.indexOf(c.value)>=0;});
+}
+function getEstadoCivil(){
+  return Array.prototype.map.call(document.querySelectorAll('#f-ecivil input:checked'),function(c){return c.value;});
+}
+function hijosValor(){
+  var t=(document.getElementById('f-hijos').value||'').trim();
+  if(t==='')return '';
+  if(!/^\d{1,2}$/.test(t)||+t>30)return null;
+  return String(+t);
+}
 function clearEmpForm(){
-  ['f-nombre','f-legajo','f-cuit','f-fnac','f-cel','f-celab','f-cobertura','f-idioma','f-dir','f-localidad','f-provincia','f-inicio','f-fin','f-banco','f-cbu','f-alias','f-consultora','f-consultora-inicio','f-consultora-fin'].forEach(function(id){
+  ['f-nombre','f-legajo','f-cuit','f-fnac','f-cel','f-celab','f-cobertura','f-idioma','f-dir','f-localidad','f-provincia','f-inicio','f-fin','f-banco','f-cbu','f-alias','f-consultora','f-consultora-inicio','f-consultora-fin','f-tel-fam','f-rel-fam','f-hijos','f-motivo-baja'].forEach(function(id){
     var el=document.getElementById(id);if(el)el.value='';
   });
+  setEstadoCivil([]);
   toggleConsultoraFechas();
   document.getElementById('f-empresa').value='Logitex';
   ['fm-planta','fm-sector','fm-puesto','f-cat'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-activo').value='1';
 }
 function fillEmpForm(e){
-  var map={nombre:'f-nombre',legajo:'f-legajo',cuit:'f-cuit',fechaNac:'f-fnac',celular:'f-cel',celularLab:'f-celab',cobertura:'f-cobertura',idioma:'f-idioma',direccion:'f-dir',localidad:'f-localidad',provincia:'f-provincia',empresa:'f-empresa',planta:'fm-planta',sector:'fm-sector',puesto:'fm-puesto',categoria:'f-cat',inicio:'f-inicio',fin:'f-fin',banco:'f-banco',cbu:'f-cbu',alias:'f-alias'};
+  var map={nombre:'f-nombre',legajo:'f-legajo',cuit:'f-cuit',fechaNac:'f-fnac',celular:'f-cel',celularLab:'f-celab',cobertura:'f-cobertura',idioma:'f-idioma',direccion:'f-dir',localidad:'f-localidad',provincia:'f-provincia',empresa:'f-empresa',planta:'fm-planta',sector:'fm-sector',puesto:'fm-puesto',categoria:'f-cat',inicio:'f-inicio',fin:'f-fin',banco:'f-banco',cbu:'f-cbu',alias:'f-alias',telFamiliar:'f-tel-fam',relacionFamiliar:'f-rel-fam',hijos:'f-hijos',motivoBaja:'f-motivo-baja'};
   Object.keys(map).forEach(function(k){var el=document.getElementById(map[k]);if(el)el.value=e[k]||'';});
   var _fc=document.getElementById('f-consultora');if(_fc)_fc.value=e.consultora||'';
   var _fci=document.getElementById('f-consultora-inicio');if(_fci)_fci.value=e.consultoraInicio||'';
   var _fcf=document.getElementById('f-consultora-fin');if(_fcf)_fcf.value=e.consultoraFin||'';
+  setEstadoCivil(e.estadoCivil);
   toggleConsultoraFechas();
   document.getElementById('f-activo').value=e.activo||'1';
 }
@@ -2845,8 +2877,14 @@ function guardarEmp(){
     activo:document.getElementById('f-activo').value,
     consultora:(document.getElementById('f-consultora')||{}).value||'',
     consultoraInicio:(document.getElementById('f-consultora-inicio')||{}).value||'',
-    consultoraFin:(document.getElementById('f-consultora-fin')||{}).value||''
+    consultoraFin:(document.getElementById('f-consultora-fin')||{}).value||'',
+    telFamiliar:(document.getElementById('f-tel-fam').value||'').trim(),
+    relacionFamiliar:(document.getElementById('f-rel-fam').value||'').trim(),
+    estadoCivil:getEstadoCivil(),
+    hijos:hijosValor(),
+    motivoBaja:(document.getElementById('f-motivo-baja').value||'').trim()
   };
+  if(data.hijos===null){alert('Cantidad de hijos: ingresá un número entero entre 0 y 30.');return;}
   // Leer equipos directamente del DOM (más confiable que esperar eventos)
   if(editingEmpId){
     if(!empEquiposData[editingEmpId])empEquiposData[editingEmpId]={tel:[],comp:[]};
