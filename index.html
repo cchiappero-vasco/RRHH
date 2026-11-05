@@ -1678,10 +1678,12 @@ function syncFormSelects(){
 // ══════════════════════════════════════════════════════════════════
 // CUMPLEAÑOS
 // ══════════════════════════════════════════════════════════════════
+// Lista de cumpleaños de todas las plantas (la manda el servidor): la ven todos los usuarios
+var cumpleaniosTodos=null;
 function showBirthdayPanel(){
   var hoy=new Date(),alerts=[],proximos=[];
   var hoyN=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate());
-  empleados.filter(function(e){return e.activo==='1'&&e.fechaNac;}).forEach(function(e){
+  (esRestringido()&&cumpleaniosTodos?cumpleaniosTodos:empleados).filter(function(e){return e.activo==='1'&&e.fechaNac;}).forEach(function(e){
     var fp=e.fechaNac.split('-');
     var cumple=new Date(hoy.getFullYear(),parseInt(fp[1])-1,parseInt(fp[2]));
     if(cumple<hoyN)cumple=new Date(hoy.getFullYear()+1,parseInt(fp[1])-1,parseInt(fp[2]));
@@ -3730,6 +3732,7 @@ function cargarDB(callback){
       if(callback) callback(false);
       return;
     }
+    cumpleaniosTodos=Array.isArray(d.cumpleanios)?d.cumpleanios:null;
     applyDB(d.datos);
     _dbVersion=d.version;_conflicto=false;
     _ultimoGuardado=JSON.stringify(collectDB());

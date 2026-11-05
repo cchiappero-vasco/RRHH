@@ -519,7 +519,17 @@ def api_logout():
 def api_leer():
     u = requiere_usuario()
     with Db() as db:
-        return jsonify(ok=True, version=version_datos(db), datos=leer_datos(db, u))
+        return jsonify(ok=True, version=version_datos(db), datos=leer_datos(db, u), cumpleanios=cumpleanios(db))
+
+
+def cumpleanios(db):
+    """Cumpleaños del personal activo de todas las plantas: el aviso lo ven todos los usuarios."""
+    lista = []
+    for r in db.filas("SELECT datos FROM empleados"):
+        e = json.loads(r["datos"])
+        if _es_activo(e) and e.get("fechaNac"):
+            lista.append({"nombre": e.get("nombre", ""), "planta": e.get("planta", ""), "fechaNac": e["fechaNac"], "activo": "1"})
+    return lista
 
 
 @app.post("/api/datos")
