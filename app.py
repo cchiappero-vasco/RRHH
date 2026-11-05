@@ -753,16 +753,16 @@ def api_excel():
     libro = openpyxl.Workbook()
     h = libro.active
     h.title = "Personal"
-    linea = Side(style="thin", color="C0C8D8")
+    linea = Side(style="thin", color="E2E8F0")
     borde = Border(left=linea, right=linea, top=linea, bottom=linea)
     for col, (_, enc, ancho) in enumerate(CAMPOS, 1):
         c = h.cell(row=1, column=col, value=enc)
-        c.font, c.fill, c.border = Font(bold=True, color="FFFFFF"), PatternFill("solid", fgColor="0F3D73"), borde
+        c.font, c.fill, c.border = Font(bold=True, color="FFFFFF"), PatternFill("solid", fgColor="6366F1"), borde
         c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         h.column_dimensions[get_column_letter(col)].width = ancho
     h.row_dimensions[1].height = 30
     h.freeze_panes = "C2"
-    par, baja = PatternFill("solid", fgColor="EEF2F8"), PatternFill("solid", fgColor="FDECEC")
+    par, baja = PatternFill("solid", fgColor="F8FAFC"), PatternFill("solid", fgColor="FEE2E2")
     for n, e in enumerate(empleados, 2):
         relleno = baja if not _es_activo(e) else (par if n % 2 == 0 else None)
         for col, v in enumerate(_fila(e), 1):
@@ -774,7 +774,7 @@ def api_excel():
     r = libro.create_sheet("Resumen")
     r.column_dimensions["A"].width, r.column_dimensions["B"].width = 26, 14
     r["A1"] = "Resumen de personal — LOGITEx RRHH"
-    r["A1"].font = Font(bold=True, size=14, color="0F3D73")
+    r["A1"].font = Font(bold=True, size=14, color="4338CA")
     activos = [e for e in empleados if _es_activo(e)]
     fila = 3
     for et, v in (("Total en nómina", len(empleados)), ("Activos", len(activos)), ("Bajas", len(empleados) - len(activos)),
@@ -784,7 +784,7 @@ def api_excel():
         fila += 1
     for titulo, clave in (("Activos por planta", "planta"), ("Activos por sector", "sector")):
         fila += 1
-        r.cell(row=fila, column=1, value=titulo).font = Font(bold=True, color="0F3D73")
+        r.cell(row=fila, column=1, value=titulo).font = Font(bold=True, color="6366F1")
         fila += 1
         conteo = {}
         for e in activos:
