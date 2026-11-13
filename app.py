@@ -466,6 +466,119 @@ def escribir_datos(db, datos, u=None):
     return nueva, len(borrados)
 
 
+def _upsert_empleado(db, e, ts):
+    db.ejecutar(
+        "INSERT INTO empleados (id, legajo, nombre, planta, sector, activo, datos, actualizado) VALUES (?,?,?,?,?,?,?,?) "
+        "ON CONFLICT (id) DO UPDATE SET legajo=excluded.legajo, nombre=excluded.nombre, planta=excluded.planta, "
+        "sector=excluded.sector, activo=excluded.activo, datos=excluded.datos, actualizado=excluded.actualizado",
+        (e["id"], str(e.get("legajo", "")), e.get("nombre", ""), e.get("planta", ""), e.get("sector", ""),
+         1 if _es_activo(e) else 0, json.dumps(e, ensure_ascii=False, sort_keys=True), ts))
+
+
+def aplicar_cambios(db, c, u=None):
+    """Aplica solo lo que cambió un usuario, registro por registro y campo por campo.
+
+    Así varias personas pueden trabajar a la vez: si dos editan empleados distintos, o campos
+    distintos del mismo empleado, se guardan los dos cambios. Si tocan el mismo campo, queda el último.
+    """
+    if not isinstance(c, dict):
+        raise ValueError("Formato de cambios inválido.")
+    emp = c.get("empleados") or {}
+    guardar = emp.get("guardar") or []
+    borrar = emp.get("borrar") or []
+    colecciones = c.get("colecciones") or {}
+    compartidas = c.get("compartidas") or {}
+    if not (isinstance(guardar, list) and isinstance(borrar, list) and isinstance(colecciones, dict) and isinstance(compartidas, dict)):
+        raise ValueError("Formato de cambios inválido.")
+    ts = ahora_iso()
+    filas = {r["id"]: r for r in db.filas("SELECT id, datos, planta FROM empleados")}
+    ver = filtro_plantas(u)
+    permitidos = {i for i, r in filas.items() if ver(r["planta"])} if ver else None
+    res = {"guardados": 0, "borrados": 0, "omitidos": 0, "nombres": []}
+
+    for item in guardar:
+        e = item.get("datos") if isinstance(item, dict) else None
+        if not isinstance(e, dict) or not e.get("id"):
+            raise ValueError("Hay un empleado sin id.")
+        emp_id = str(e["id"])
+        campos = item.get("campos")
+        if emp_id in filas:
+            if ver and emp_id not in permitidos:
+                raise ValueError("No tenés permiso para modificar empleados de otra planta.")
+            if isinstance(campos, list):
+                nuevo = json.loads(filas[emp_id]["datos"])
+                for k in campos:
+                    if not isinstance(k, str):
+                        continue
+                    if k in e:
+                        nuevo[k] = e[k]
+                    else:
+                        nuevo.pop(k, None)
+            else:
+                nuevo = e
+        elif item.get("nuevo"):
+            nuevo = e
+        else:
+            res["omitidos"] += 1  # otra persona lo eliminó mientras se editaba
+            continue
+        nuevo["id"] = emp_id
+        if ver and not ver(nuevo.get("planta")):
+            raise ValueError(f"No tenés permiso para cargar empleados en la planta {nuevo.get('planta') or '(sin planta)'}.")
+        _upsert_empleado(db, nuevo, ts)
+        filas[emp_id] = {"id": emp_id, "datos": json.dumps(nuevo), "planta": nuevo.get("planta", "")}
+        if ver:
+            permitidos.add(emp_id)
+        res["guardados"] += 1
+        res["nombres"].append(nuevo.get("nombre") or emp_id)
+
+    for emp_id in borrar:
+        emp_id = str(emp_id)
+        if emp_id not in filas:
+            continue
+        if ver and emp_id not in permitidos:
+            raise ValueError("No tenés permiso para eliminar empleados de otra planta.")
+        db.ejecutar("DELETE FROM empleados WHERE id = ?", (emp_id,))
+        res["borrados"] += 1
+        res["nombres"].append("baja de " + (json.loads(filas.pop(emp_id)["datos"]).get("nombre") or emp_id))
+
+    for clave, cambio in colecciones.items():
+        if clave not in COLECCIONES_POR_EMPLEADO or not isinstance(cambio, dict):
+            continue
+        poner = cambio.get("poner") or {}
+        quitar = cambio.get("quitar") or []
+        if not isinstance(poner, dict) or not isinstance(quitar, list):
+            raise ValueError("Formato de cambios inválido.")
+        if ver:
+            for k in list(poner) + [str(k) for k in quitar]:
+                if k in filas and k not in permitidos:
+                    raise ValueError("No tenés permiso para modificar datos de empleados de otra planta.")
+            # claves que no son de un empleado suyo (ni de nadie): se ignoran
+            poner = {k: v for k, v in poner.items() if k in permitidos}
+            quitar = [str(k) for k in quitar if str(k) in permitidos or str(k) not in filas]
+        fila = db.fila("SELECT datos FROM colecciones WHERE clave = ?", (clave,))
+        valor = json.loads(fila["datos"]) if fila else {}
+        if not isinstance(valor, dict):
+            valor = {}
+        valor.update(poner)
+        for k in quitar:
+            valor.pop(k, None)
+        db.ejecutar("INSERT INTO colecciones (clave, datos, actualizado) VALUES (?,?,?) "
+                    "ON CONFLICT (clave) DO UPDATE SET datos=excluded.datos, actualizado=excluded.actualizado",
+                    (clave, json.dumps(valor, ensure_ascii=False), ts))
+
+    if not ver:  # las tablas compartidas solo las cambian usuarios sin restricción de planta
+        for clave, valor in compartidas.items():
+            if clave not in COLECCIONES_COMPARTIDAS:
+                continue
+            db.ejecutar("INSERT INTO colecciones (clave, datos, actualizado) VALUES (?,?,?) "
+                        "ON CONFLICT (clave) DO UPDATE SET datos=excluded.datos, actualizado=excluded.actualizado",
+                        (clave, json.dumps(valor, ensure_ascii=False), ts))
+
+    nueva = version_datos(db) + 1
+    db.ejecutar("UPDATE meta SET valor = ? WHERE clave = 'version_datos'", (str(nueva),))
+    return nueva, res
+
+
 @app.get("/api/sesion")
 def api_sesion():
     return jsonify(ok=True, usuario=usuario_actual(), version_app=APP_VERSION)
@@ -549,6 +662,29 @@ def api_guardar():
         det = f"{len((cuerpo.get('datos') or {}).get('empleados', []))} empleados" + (f", {borrados} eliminados" if borrados else "")
         registrar(db, u["username"], "guardar", det)
     return jsonify(ok=True, version=nueva)
+
+
+@app.post("/api/cambios")
+def api_cambios():
+    """Guarda solo lo que cambió este usuario, sin pisar lo que guardaron otros."""
+    u = requiere_usuario()
+    cuerpo = leer_json()
+    with Db() as db:
+        previa = version_datos(db, bloquear=True)
+        hoy = datetime.date.today().isoformat()
+        if not db.fila("SELECT 1 AS x FROM respaldos WHERE fecha >= ? AND motivo = 'diario'", (hoy,)):
+            guardar_respaldo(db, "sistema", "diario")
+        nueva, res = aplicar_cambios(db, cuerpo.get("cambios"), u)
+        det = ", ".join(res["nombres"][:8]) + (f" y {len(res['nombres']) - 8} más" if len(res["nombres"]) > 8 else "")
+        registrar(db, u["username"], "guardar", det or "tablas y datos asociados")
+    return jsonify(ok=True, version=nueva, previa=previa, omitidos=res["omitidos"])
+
+
+@app.get("/api/version")
+def api_version():
+    requiere_usuario()
+    with Db() as db:
+        return jsonify(ok=True, version=version_datos(db))
 
 
 @app.post("/api/importar")

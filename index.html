@@ -1270,7 +1270,8 @@ function colorFor(n){var h=0;for(var i=0;i<n.length;i++)h+=n.charCodeAt(i);retur
 function gid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
 function todayISO(){return new Date().toISOString().split('T')[0];}
 function todayFmt(){return new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});}
-function cm(id){var el=document.getElementById(id);if(el)el.classList.remove('open');}
+function cm(id){var el=document.getElementById(id);if(el)el.classList.remove('open');
+  if(_refrescarAlCerrar&&!_hayModalAbierto())setTimeout(refrescarPantalla,0);}
 function om(id){var el=document.getElementById(id);if(el)el.classList.add('open');}
 function switchTab(btn,panelId){
   var tabs=btn.parentElement.querySelectorAll('.form-tab');
@@ -1370,7 +1371,9 @@ function entrarAlSistema(usr){
   if(mods.length>0)showPage(mods[0].key);
   showBirthdayPanel();
   if(window._autoSaveInterval) clearInterval(window._autoSaveInterval);
-  window._autoSaveInterval=setInterval(function(){guardarDB();},15*1000);
+  window._autoSaveInterval=setInterval(function(){
+    if(hayCambiosSinGuardar())guardarDB(); else comprobarCambiosRemotos();
+  },15*1000);
 }
 function doLogout(){
   guardarDB(function(){
@@ -3601,7 +3604,7 @@ document.addEventListener('visibilitychange',function(){
 // navegador: todo se lee y se escribe a través de /api/...
 // ══════════════════════════════════════════════════════════════════
 var _dbVersion=null;        // versión de los datos en el servidor
-var _ultimoGuardado=null;   // JSON de lo último que se guardó (para detectar cambios)
+var _base=null;   // copia de lo último sincronizado con el servidor: lo distinto a esto es lo que cambió este usuario
 var _guardando=false,_pendiente=false,_conflicto=false,_cbsGuardado=[];
 var _carpetaDatos='';
 var _reingreso=false;      // la sesión venció con cambios sin guardar
@@ -3671,7 +3674,7 @@ function showSaveIndicator(state, msg){
 
 function hayCambiosSinGuardar(){
   if(!currentUser||_dbVersion===null) return false;
-  try{ return JSON.stringify(collectDB())!==_ultimoGuardado; }catch(e){ return false; }
+  try{ return !!calcularCambios(collectDB(),_base); }catch(e){ return false; }
 }
 
 function _flushCbs(){
@@ -3679,47 +3682,139 @@ function _flushCbs(){
   cbs.forEach(function(cb){try{cb();}catch(e){console.error(e);}});
 }
 
+// ── Edición simultánea ──
+// Cada usuario manda solo lo que cambió (empleado por empleado, campo por campo) y el servidor lo
+// combina con lo que guardaron los demás. Cada 15 s se traen los cambios de los otros usuarios.
+var COL_EMP=['vacPeriodos','evalData','empEquiposData','fotos'];
+var COL_COMP=['tabPlantas','tabSectores','tabPuestos','tabActividades','inventarioITAplicado'];
+var _sincronizando=false;
+function _clon(o){return o===undefined?undefined:JSON.parse(JSON.stringify(o));}
+function _igual(a,b){return JSON.stringify(a)===JSON.stringify(b);}
+function calcularCambios(actual,base){
+  if(!base)return null;
+  var c={empleados:{guardar:[],borrar:[]},colecciones:{},compartidas:{}},hay=false;
+  var previos={},vistos={};
+  (base.empleados||[]).forEach(function(e){previos[e.id]=e;});
+  (actual.empleados||[]).forEach(function(e){
+    vistos[e.id]=1;
+    var b=previos[e.id];
+    if(!b){c.empleados.guardar.push({datos:e,nuevo:true});hay=true;return;}
+    var claves={},campos=[];
+    Object.keys(e).forEach(function(k){claves[k]=1;});Object.keys(b).forEach(function(k){claves[k]=1;});
+    Object.keys(claves).forEach(function(k){if(!_igual(e[k],b[k]))campos.push(k);});
+    if(campos.length){c.empleados.guardar.push({datos:e,campos:campos});hay=true;}
+  });
+  Object.keys(previos).forEach(function(id){if(!vistos[id]){c.empleados.borrar.push(id);hay=true;}});
+  COL_EMP.forEach(function(k){
+    var a=actual[k]||{},b=base[k]||{},poner={},quitar=[],h=false;
+    Object.keys(a).forEach(function(id){if(!_igual(a[id],b[id])){poner[id]=a[id];h=true;}});
+    Object.keys(b).forEach(function(id){if(!(id in a)){quitar.push(id);h=true;}});
+    if(h){c.colecciones[k]={poner:poner,quitar:quitar};hay=true;}
+  });
+  COL_COMP.forEach(function(k){if(!_igual(actual[k],base[k])){c.compartidas[k]=actual[k];hay=true;}});
+  return hay?c:null;
+}
+// Aplica cambios locales todavía no guardados sobre los datos que llegan del servidor
+function aplicarCambiosLocales(datos,c){
+  datos.empleados=datos.empleados||[];
+  c.empleados.guardar.forEach(function(it){
+    var e=it.datos,i=datos.empleados.findIndex(function(x){return x.id===e.id;});
+    if(i<0){if(it.nuevo)datos.empleados.push(_clon(e));return;}
+    if(!it.campos){datos.empleados[i]=_clon(e);return;}
+    it.campos.forEach(function(k){if(k in e)datos.empleados[i][k]=_clon(e[k]);else delete datos.empleados[i][k];});
+  });
+  c.empleados.borrar.forEach(function(id){datos.empleados=datos.empleados.filter(function(x){return x.id!==id;});});
+  Object.keys(c.colecciones).forEach(function(k){
+    var d=datos[k]=datos[k]||{},x=c.colecciones[k];
+    Object.keys(x.poner).forEach(function(id){d[id]=_clon(x.poner[id]);});
+    x.quitar.forEach(function(id){delete d[id];});
+  });
+  Object.keys(c.compartidas).forEach(function(k){datos[k]=_clon(c.compartidas[k]);});
+  return datos;
+}
+function _hayModalAbierto(){return !!document.querySelector('.modal-overlay.open,.modal.open');}
+var _refrescarAlCerrar=false;
+function refrescarPantalla(){
+  if(!currentUser)return;
+  if(_hayModalAbierto()){_refrescarAlCerrar=true;return;}  // no interrumpir a quien está editando
+  _refrescarAlCerrar=false;
+  var y=window.scrollY,active=document.querySelector('.page.active');
+  syncFormSelects();
+  if(active)showPage(active.id.replace('page-',''));
+  showBirthdayPanel();
+  window.scrollTo(0,y);
+}
+// Trae lo que guardaron otros usuarios sin perder lo que este usuario está cargando
+function sincronizar(){
+  if(!currentUser||_dbVersion===null)return;
+  if(_guardando){_pendiente=true;return;}
+  _guardando=_sincronizando=true;
+  api('GET','/api/datos').then(function(d){
+    if(!d.ok)return;
+    var pendiente=calcularCambios(collectDB(),_base);
+    cumpleaniosTodos=Array.isArray(d.cumpleanios)?d.cumpleanios:null;
+    applyDB(d.datos);
+    _base=_clon(collectDB());
+    if(pendiente)applyDB(aplicarCambiosLocales(_clon(_base),pendiente));
+    _dbVersion=d.version;
+    refrescarPantalla();
+    console.log('[LOGITEx] Cambios de otros usuarios cargados (versión '+_dbVersion+')');
+  }).then(function(){
+    _guardando=_sincronizando=false;
+    if(_pendiente){_pendiente=false;guardarDB();}
+  });
+}
+// Si no hay nada propio para guardar, mira si otro usuario guardó algo
+function comprobarCambiosRemotos(){
+  if(!currentUser||_dbVersion===null||_guardando)return;
+  api('GET','/api/version').then(function(d){
+    if(d.ok&&d.version!==_dbVersion)sincronizar();
+  });
+}
+
 // Guarda en el servidor solo si hubo cambios. El callback se llama al terminar.
 function guardarDB(callback){
   if(callback) _cbsGuardado.push(callback);
   if(_guardando){ _pendiente=true; return; }
-  if(!currentUser||_dbVersion===null||_conflicto){ _flushCbs(); return; }
-  var s=JSON.stringify(collectDB());
-  if(s===_ultimoGuardado){ _flushCbs(); return; }
+  if(!currentUser||_dbVersion===null||!_base){ _flushCbs(); return; }
+  var actual=collectDB();
+  var c=calcularCambios(actual,_base);
+  if(!c){ _flushCbs(); return; }
+  var s=JSON.stringify({version:_dbVersion,cambios:c});
   if(s.length>3900000){ showSaveIndicator('err','<i class="fa-solid fa-circle-xmark"></i> No se guardó: los datos superan 4 MB (revisá las fotos)'); _flushCbs(); return; }
+  var enviado=_clon(actual);
   _guardando=true;
   showSaveIndicator('saving','Guardando...');
-  api('POST','/api/datos','{"version":'+_dbVersion+',"datos":'+s+'}').then(function(d){
+  api('POST','/api/cambios',s).then(function(d){
     if(d.ok){
-      _dbVersion=d.version;_ultimoGuardado=s;
+      var otros=d.previa!==_dbVersion;
+      _base=enviado;_dbVersion=d.version;
       showSaveIndicator('ok','<i class="fa-solid fa-check"></i> Guardado '+new Date().toLocaleTimeString('es-AR',{hour12:false}));
-    }else if(d.conflicto){
-      _conflicto=true;
-      showSaveIndicator('err','<i class="fa-solid fa-triangle-exclamation"></i> Otra persona guardó cambios: recargá la página');
-      alert('Otra persona (u otra pestaña tuya) guardó cambios mientras trabajabas.\n\n'+
-            'Para no pisar esos cambios, esta pantalla dejó de guardar. '+
-            'Recargá la página (F5) para ver la última versión y volvé a hacer tu último cambio.');
+      if(otros||d.omitidos)_pendienteSync=true;
+      if(d.omitidos)mostrarToastNomina('<i class="fa-solid fa-triangle-exclamation"></i> Otro usuario eliminó un empleado que estabas editando','err');
     }else if(d._status!==401){
       showSaveIndicator('err','<i class="fa-solid fa-circle-xmark"></i> No se guardó: '+(d.error||'error desconocido'));
     }
   }).then(function(){
     _guardando=false;
-    if(_pendiente){ _pendiente=false; guardarDB(); } else _flushCbs();
+    if(_pendiente){ _pendiente=false; guardarDB(); }
+    else{ _flushCbs(); if(_pendienteSync){ _pendienteSync=false; sincronizar(); } }
   });
 }
+var _pendienteSync=false;
 
 // Versión sincrónica: la usa Python al cerrar la ventana de escritorio.
 function guardarDBSync(){
-  if(!currentUser||_dbVersion===null||_conflicto) return true;
-  var s=JSON.stringify(collectDB());
-  if(s===_ultimoGuardado) return true;
+  if(!currentUser||_dbVersion===null||!_base) return true;
+  var actual=collectDB(),c=calcularCambios(actual,_base);
+  if(!c) return true;
   try{
     var x=new XMLHttpRequest();
-    x.open('POST','/api/datos',false);
+    x.open('POST','/api/cambios',false);
     x.setRequestHeader('Content-Type','application/json');
-    x.send('{"version":'+_dbVersion+',"datos":'+s+'}');
+    x.send(JSON.stringify({version:_dbVersion,cambios:c}));
     var d=JSON.parse(x.responseText);
-    if(d.ok){_dbVersion=d.version;_ultimoGuardado=s;}
+    if(d.ok){_dbVersion=d.version;_base=_clon(actual);}
     return !!d.ok;
   }catch(e){ return false; }
 }
@@ -3735,7 +3830,7 @@ function cargarDB(callback){
     cumpleaniosTodos=Array.isArray(d.cumpleanios)?d.cumpleanios:null;
     applyDB(d.datos);
     _dbVersion=d.version;_conflicto=false;
-    _ultimoGuardado=JSON.stringify(collectDB());
+    _base=_clon(collectDB());
     aplicarInventarioIT();   // solo la primera vez; si cambia algo, el autoguardado lo guarda
     syncFormSelects();
     console.log('[LOGITEx] Datos cargados (versión '+_dbVersion+', '+empleados.length+' empleados)');
