@@ -300,12 +300,17 @@ def usuario_actual(db=None):
         return buscar(d)
 
 
-def requiere_usuario(admin=False):
+ROLES = ("admin", "operador", "consulta")
+
+
+def requiere_usuario(admin=False, escribe=False):
     u = usuario_actual()
     if not u:
         raise ErrorAPI(401, "Sesión vencida. Volvé a ingresar.")
     if admin and u["rol"] != "admin":
         raise ErrorAPI(403, "Solo un administrador puede hacer esto.")
+    if escribe and u["rol"] == "consulta":
+        raise ErrorAPI(403, "Tu usuario es de consulta: puede ver, filtrar y ordenar, pero no modificar datos.")
     return u
 
 
@@ -647,7 +652,7 @@ def cumpleanios(db):
 
 @app.post("/api/datos")
 def api_guardar():
-    u = requiere_usuario()
+    u = requiere_usuario(escribe=True)
     cuerpo = leer_json()
     with Db() as db:
         actual = version_datos(db, bloquear=True)
@@ -667,7 +672,7 @@ def api_guardar():
 @app.post("/api/cambios")
 def api_cambios():
     """Guarda solo lo que cambió este usuario, sin pisar lo que guardaron otros."""
-    u = requiere_usuario()
+    u = requiere_usuario(escribe=True)
     cuerpo = leer_json()
     with Db() as db:
         previa = version_datos(db, bloquear=True)
@@ -723,7 +728,7 @@ def api_guardar_usuario():
     user = str(d.get("username") or "").strip().lower()
     nombre = str(d.get("nombre") or "").strip()
     clave = str(d.get("password") or "")
-    rol = d.get("rol") if d.get("rol") in ("admin", "operador") else "operador"
+    rol = d.get("rol") if d.get("rol") in ROLES else "operador"
     activo = 0 if str(d.get("activo", "1")) == "0" else 1
     uid = d.get("id")
     plantas = d.get("plantas") or []

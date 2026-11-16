@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Sistema de RRHH LOGITEx</title>
+<script>
+/* Tema (claro / oscuro) antes de dibujar la pantalla. Por defecto: oscuro. */
+(function(){try{var t=localStorage.getItem('rrhh_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,124 +29,108 @@
    (el modo oscuro solo redefine esas variables).
    ============================================================ */
 :root{
-  /* Paleta oficial TMS Inbound (Logitex): PrimeVue Aura, primario Indigo, superficies Slate */
-  --bg:#F8FAFC;
-  --bg-alt:#F1F5F9;
-  --surface:#FFFFFF;
-  --surface-2:#F8FAFC;
-  --border:#E2E8F0;
-  --border-strong:#CBD5E1;
-  --text:#0F172A;
-  --text-soft:#475569;
-  --text-faint:#64748B;
+  /* ── Guía LOGITEX (Ecosistema 360 v14): variables oficiales ── */
+  --primary:#4F46E5;      /* logo, botones principales, ítem activo */
+  --primary-2:#6366F1;    /* resaltados, foco, columna clave */
+  --bg:#F4F5FA;           /* fondo general */
+  --card:#FFFFFF;         /* tarjetas, tablas */
+  --side:#FFFFFF;         /* menú lateral, encabezados de tabla */
+  --text:#1E1B4B;         /* títulos y datos */
+  --text-2:#6B7280;       /* etiquetas */
+  --border:#E5E7EB;       /* bordes */
+  --red:#EF4444;          /* crítico */
+  --blue:#3B82F6;         /* en proceso */
+  --green:#10B981;        /* OK */
+  --orange:#F59E0B;       /* alerta / "En desarrollo" */
+  --violet:#8B5CF6;       /* especial */
 
-  /* Menú lateral y barra superior: claros en modo claro, oscuros en modo oscuro */
-  --sidebar-bg:#FFFFFF;
-  --sidebar-bg-2:#FFFFFF;
-  --sidebar-text:#475569;
-  --sidebar-border:#E2E8F0;
-  --chrome-strong:#0F172A;
-  --chrome-label:#94A3B8;
-  --chrome-ghost:#F8FAFC;
-  --chrome-ghost-border:#E2E8F0;
-  --chrome-hover:#F1F5F9;
-  --chrome-active:#EEF2FF;
-  --chrome-active-text:#4338CA;
-  --chrome-icon:#6366F1;
-  /* Encabezados de columnas (Gantt, Matriz, tablas de actas) */
-  --th-grupo-bg:#E0E7FF;
-  --th-bg:#EEF2FF;
-  --th-total-bg:#C7D2FE;
-  --th-text:#312E81;
-  --th-linea:#C7D2FE;
-
-  /* Marca */
-  --primary:#6366F1;
-  --primary-dark:#4338CA;
-  --primary-hover:#4F46E5;
-  --primary-light:#EEF2FF;
-  --primary-soft:#E0E7FF;
-  --accent:#4F46E5;
-  --accent-light:#E0E7FF;
-  /* Semáforos: verde = bien, ámbar = riesgo, rojo = mal, cian = informativo, gris = neutral */
-  --success:#10B981;
-  --warning:#F59E0B;
-  --danger:#EF4444;
-  --info:#22D3EE;
-  --neutral:#94A3B8;
-  --violet:#8B5CF6;
-  /* Fondos suaves y tonos de texto legibles, derivados del color del semáforo */
-  --success-light:color-mix(in srgb,var(--success) 12%,#fff);
-  --warning-light:color-mix(in srgb,var(--warning) 14%,#fff);
-  --danger-light:color-mix(in srgb,var(--danger) 11%,#fff);
-  --violet-light:color-mix(in srgb,var(--violet) 11%,#fff);
-  --info-light:color-mix(in srgb,var(--info) 14%,#fff);
-  --success-soft:color-mix(in srgb,var(--success) 26%,#fff);
-  --warning-soft:color-mix(in srgb,var(--warning) 30%,#fff);
-  --danger-soft:color-mix(in srgb,var(--danger) 24%,#fff);
-  --success-ink:color-mix(in srgb,var(--success) 60%,#000);
-  --warning-ink:color-mix(in srgb,var(--warning) 58%,#000);
-  --danger-ink:color-mix(in srgb,var(--danger) 80%,#000);
+  /* Derivadas (todas salen de las oficiales) */
+  --surface:var(--card);
+  --surface-2:var(--bg);
+  --bg-alt:color-mix(in srgb,var(--text-2) 8%,var(--card));
+  --border-strong:color-mix(in srgb,var(--text-2) 30%,var(--border));
+  --text-soft:color-mix(in srgb,var(--text) 72%,var(--text-2));
+  --text-faint:var(--text-2);
+  --primary-dark:color-mix(in srgb,var(--primary) 80%,#000);
+  --primary-hover:color-mix(in srgb,var(--primary) 88%,#000);
+  --primary-light:color-mix(in srgb,var(--primary-2) 9%,var(--card));
+  --primary-soft:color-mix(in srgb,var(--primary-2) 20%,var(--card));
+  --accent:var(--primary-2);
+  --accent-light:var(--primary-soft);
+  --success:var(--green);
+  --warning:var(--orange);
+  --danger:var(--red);
+  --info:var(--blue);
+  --neutral:var(--text-2);
+  --success-light:color-mix(in srgb,var(--green) 12%,var(--card));
+  --warning-light:color-mix(in srgb,var(--orange) 14%,var(--card));
+  --danger-light:color-mix(in srgb,var(--red) 11%,var(--card));
+  --violet-light:color-mix(in srgb,var(--violet) 11%,var(--card));
+  --info-light:color-mix(in srgb,var(--blue) 12%,var(--card));
+  --success-soft:color-mix(in srgb,var(--green) 26%,var(--card));
+  --warning-soft:color-mix(in srgb,var(--orange) 30%,var(--card));
+  --danger-soft:color-mix(in srgb,var(--red) 24%,var(--card));
+  --success-ink:color-mix(in srgb,var(--green) 60%,#000);
+  --warning-ink:color-mix(in srgb,var(--orange) 58%,#000);
+  --danger-ink:color-mix(in srgb,var(--red) 80%,#000);
   --violet-ink:color-mix(in srgb,var(--violet) 82%,#000);
-  /* Series de gráficos, en este orden */
-  --serie-1:#6366F1;--serie-2:#22D3EE;--serie-3:#A78BFA;--serie-4:#34D399;--serie-5:#F59E0B;--serie-6:#FB7185;
+  --info-ink:color-mix(in srgb,var(--blue) 80%,#000);
+  --serie-1:var(--primary-2);--serie-2:var(--blue);--serie-3:var(--violet);--serie-4:var(--green);--serie-5:var(--orange);--serie-6:var(--red);
+
+  /* Menú lateral y encabezado */
+  --sidebar-bg:var(--side);
+  --sidebar-bg-2:var(--side);
+  --sidebar-text:var(--text-2);
+  --sidebar-border:var(--border);
+  --chrome-strong:var(--text);
+  --chrome-label:var(--text-2);
+  --chrome-ghost:var(--bg);
+  --chrome-ghost-border:var(--border);
+  --chrome-hover:var(--bg-alt);
+  --chrome-active:var(--primary);
+  --chrome-active-text:#FFFFFF;
+  --chrome-icon:var(--primary-2);
+  /* Encabezados de tabla: fondo --side, 11,5 px mayúsculas */
+  --th-grupo-bg:var(--side);
+  --th-bg:var(--side);
+  --th-total-bg:var(--side);
+  --th-text:var(--text-2);
+  --th-grupo-text:var(--primary-2);
+  --th-linea:var(--border);
 
   --radius-sm:8px;
-  --radius:12px;
-  --radius-lg:16px;
-  --shadow-sm:0 1px 2px rgba(15,23,42,.05);
-  --shadow:0 2px 10px rgba(15,23,42,.06);
-  --shadow-lg:0 12px 32px rgba(15,23,42,.14);
+  --radius:10px;
+  --radius-lg:12px;
+  --shadow-sm:0 1px 2px rgba(17,20,29,.05);
+  --shadow:0 2px 8px rgba(17,20,29,.06);
+  --shadow-lg:0 12px 32px rgba(17,20,29,.14);
 
-  --sidebar-w:248px;
+  --sidebar-w:240px;
   --header-h:64px;
 }
-body.dark{
-  --bg:#0F172A;
-  --bg-alt:#172033;
-  --surface:#1E293B;
-  --surface-2:#0F172A;
-  --border:#334155;
-  --border-strong:#475569;
-  --text:#F8FAFC;
-  --text-soft:#CBD5E1;
-  --text-faint:#94A3B8;
-  --sidebar-bg:#0F172A;
-  --sidebar-bg-2:#1E293B;
-  --sidebar-text:#94A3B8;
-  --sidebar-border:#1E293B;
-  --chrome-strong:#FFFFFF;
-  --chrome-label:#64748B;
-  --chrome-ghost:rgba(255,255,255,.08);
-  --chrome-ghost-border:rgba(255,255,255,.20);
-  --chrome-hover:rgba(255,255,255,.08);
-  --chrome-active:rgba(99,102,241,.28);
-  --chrome-active-text:#FFFFFF;
-  --chrome-icon:#C7D2FE;
-  --th-grupo-bg:#4338CA;
-  --th-bg:#6366F1;
-  --th-total-bg:#312E81;
-  --th-text:#FFFFFF;
-  --th-linea:rgba(255,255,255,.25);
+[data-theme="dark"]{
+  color-scheme:dark;
   --primary:#6366F1;
+  --primary-2:#818CF8;
+  --bg:#11141D;
+  --card:#1A1D27;
+  --side:#151821;
+  --text:#F9FAFB;
+  --text-2:#9CA3AF;
+  --border:#2E3245;
+  --red:#F87171;
+  --blue:#60A5FA;
+  --green:#34D399;
+  --orange:#FBBF24;
+  --violet:#A78BFA;
   --primary-dark:#A5B4FC;
-  --primary-hover:#818CF8;
-  --primary-light:rgba(99,102,241,.18);
-  --primary-soft:rgba(99,102,241,.30);
-  --accent:#818CF8;
-  --accent-light:rgba(99,102,241,.18);
-  --success-light:color-mix(in srgb,var(--success) 18%,#1E293B);
-  --warning-light:color-mix(in srgb,var(--warning) 18%,#1E293B);
-  --danger-light:color-mix(in srgb,var(--danger) 18%,#1E293B);
-  --violet-light:color-mix(in srgb,var(--violet) 20%,#1E293B);
-  --info-light:color-mix(in srgb,var(--info) 18%,#1E293B);
-  --success-soft:color-mix(in srgb,var(--success) 32%,#1E293B);
-  --warning-soft:color-mix(in srgb,var(--warning) 32%,#1E293B);
-  --danger-soft:color-mix(in srgb,var(--danger) 32%,#1E293B);
-  --success-ink:#34D399;
-  --warning-ink:#F59E0B;
-  --danger-ink:#FB7185;
-  --violet-ink:#A78BFA;
+  --primary-hover:color-mix(in srgb,var(--primary) 85%,#fff);
+  --success-ink:var(--green);
+  --warning-ink:var(--orange);
+  --danger-ink:var(--red);
+  --violet-ink:var(--violet);
+  --info-ink:var(--blue);
+  --chrome-ghost:color-mix(in srgb,var(--card) 70%,var(--side));
   --shadow-sm:none;
   --shadow:0 2px 10px rgba(0,0,0,.35);
   --shadow-lg:0 12px 32px rgba(0,0,0,.5);
@@ -152,16 +140,15 @@ body.dark{
 html,body{min-height:100%}
 body{
   font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  background:var(--bg);color:var(--text);font-size:13.5px;line-height:1.45;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.45;
   -webkit-font-smoothing:antialiased;overflow-x:hidden;
 }
 button,input,select,textarea{font-family:inherit}
 .mono{font-family:'JetBrains Mono',monospace}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:20px}
-::-webkit-scrollbar-thumb:hover{background:#94A3B8}
-body.dark ::-webkit-scrollbar-thumb{background:#334155}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:20px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-2)}
 
 /* ---------- LOGIN ---------- */
 .login-screen{
@@ -174,7 +161,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#334155}
   background:var(--surface);border-radius:var(--radius-lg);padding:38px 36px 28px;width:100%;max-width:400px;
   box-shadow:0 24px 64px rgba(2,6,23,.45);border:1px solid rgba(255,255,255,.06);
 }
-.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.login-brand{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:26px}
 .login-brand .logo-mark{
   width:44px;height:44px;border-radius:12px;flex-shrink:0;
   background:linear-gradient(135deg,var(--primary),var(--accent));
@@ -207,17 +194,20 @@ body.dark ::-webkit-scrollbar-thumb{background:#334155}
   color:var(--sidebar-text);flex-direction:column;transition:width .2s ease, transform .2s ease;
   border-right:1px solid var(--sidebar-border);
 }
-.sidebar-brand{display:flex;align-items:center;gap:10px;padding:20px 18px;border-bottom:1px solid var(--sidebar-border);white-space:nowrap;overflow:hidden}
-.sidebar-brand .logo-mark{
-  width:34px;height:34px;border-radius:9px;flex-shrink:0;
-  background:linear-gradient(135deg,#6366F1,#4F46E5);
-  display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;box-shadow:0 4px 14px rgba(67,56,202,.45);
+.sidebar{display:flex;flex-direction:column}
+.sidebar-brand{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:18px 18px 14px;border-bottom:1px solid var(--sidebar-border);white-space:nowrap;overflow:hidden}
+/* Logo LOGITEx en el color de marca (alto 34 px, radio 4 px) */
+.logo-logitex{
+  height:34px;width:176px;max-width:100%;border-radius:4px;background:var(--primary);
+  -webkit-mask:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAnCAYAAABKSgfJAAAIxUlEQVR4nO3deZBcVRXH8U8yWSAkpMIixRalwiYqiIooGmVRFhUpLFkLVwRlUSIKiAplWcomoKCgYSlXDAKCirggQinKJqhgpCJCJcgawAoMEiCZ5PrH6a6ZDP2Wnu5O3iTvW/VqJv3uve/0m3fuPfd3z30Zk1JSU1PTmrGr2oCamipTO0hNTQ7jVrUBXWAyXo8tsQ2Wox9z8TD+upLsmNKwYbuGHePRhwW4Gw827KkZRXTDQSbjm9gay1qcX4Y/4ZQuXKvJBjgK+2KngrKLcCWuwe8ybOzEjkNwEHYQ9yKPh3FVw55bUXYCuANm4VV4IcOOL+EKTMOpmInFJdsvYgIW4mTci/OwC57voM3xeAjHq3LHkVLq9JiaUro7ZbMkpXRlF64jpbReSumMlNKzOdfLY15K6YAufefTUkrLRmhHSindllKaWfJ6M1P+PU4ppVmNshuklK7vwK4sHk8pvalxjRu71Ob8lNKM1J1noyfHaJmDTBC99DycpLinzmIb0cv+DOuNsI19cY/oTTu5fzvjepxh5N+npseMBgdZG0fgcmzYpTb3w5/FQ9oOR2IOpnfJjrWEw5/b+L2mYlTdQabiy/hWD9reFt9T3kk+g9lYpwe2HCHi+tpJKkaVHWQc3oPP9vAa2+Kixs88DsJXemgHMTqd3uNr1LRJlR3kjbi0jfKLcQduFtJqWbbH1wrOH698775YzFFuEhJzfxu27C86hZqKUNV1kI3xeUwsUfZeIYHehIHGZ2MwA0fjE2Iek8dMMVKdPezzyfiQcNYydpyKX1tRXp2I3YTMvUtG3QEhHJwihIhOeF7Mk+7BkiGfvyBGyj2xfk79nzbqDu0Q+vA0Hi1pw+dwvs5k4GrQBSlsauquzDsmpbRvkT6YUlqaUppTor2ZKeTdIm5NKW0yrO4eKaUnS9S9MqW0ToEdE1JK3xhWb6BRd7sS36GszJt37J1Sur+gnQNLtFMk856UUlq7RDuVP6oYYm2KEwrKDIgFt0NKtHczPornCsrNEOrWUF4nFuHyuA4fLNH+EqFYXYgXRVi3OQ4Qo09NBamig0wRIU8e9+GwNtq8BccWlNnQig7yCrylhB3nKR9KvIgThdOdiMdK1qtZRVTNQdbCrgVl+kWM3W7KyB9Eb5/Hy7BV4/ctFDvI30T6Sjs8h/+1WadmFVE1B5kk8o3yWIjvjKDt+fhFQZlpBiXfDeSHV4uE09W8lDOEUJEKjvnYRIgYj+eUu9pLhYXj8GxOnQXi79kRVXOQsWJxMI/FeGqE7f+74Pw0kXRJpLfk8RQeyDj3WrFSX/SA5B2fKrj+6sLaQoG8XHaouj92FOpkk2Nkp+gsF3O7Zzo1rmoOMkW2FEqEVZ1MaBeLESiL8QZv+pSCtvpFr9cr8qTY1ZFZ8iXukw3ek7OFwJHFUWKLwfJOjaqagxSxVHsLbyOhObeZUVCuXz3J7jaH4pGMc7tjH5FkepjshdsfN44lGefbYrQ5yHis2+Nr9DV+/r3H18mjX3E4uDoyT+TePZ1x/sNi9MgKrR7CJ3VRBKmagzwrJNks+sSOvZEyCRvlnF+q/M3dTMTFNd3lIvxRa5Vyd3xE64TRJPLZOp53DKVqqSbLFX/BSUJdGslEfauC84vE2gbhrHlM1JvMXmKyOprTNOaL8DNPim/uKHyxxblD8BftdYZfFKpiN3eMVs5B+sUIckxOmY1EflW72bVb4L0FZRYZnCg+JfaRvzyj7HQhKFzT4txCfF98l6XDzi0V2QLvEjlnrXhElbehFjNbZ7lYi8UWgKvlj/hNfoNvd3C9TKrmIANi8S2PdUUPc7r2eosd8e6CMk8YjP0XCKk2y0EYTEUZPpo9JkKFLPYS4UIW9+FfeYauAdyCr+ML8hXFh4UkvqgXRlRtDgL/xS8LymyNH7XR5k4iByqPJ/HzIf9+VLxsIo+dRbZvu+wjRrQs/iF7oromca3iF0/8Sg/l9io6yJPye19i5Hu/SDkpYiZ+qHiofsCKDgJ3yV93WUeEAu8sYUeTo4VOn8WDQsOv4SzFyaJH4q0G1ceusjJCrHF4u1gtzfsSfeLhOBR3irypvJBoHA4WG5pm6Ww/yDNiH8Tw/Q53iG25Z+XU3UbMN06Rv8FrfZGlfKz8Vfrb5St5o4E9xXrFgBVXv4fSJzrD74qoYTiniby8Mg/+ReLdaE+0a2gRK8NBxohM2V1LlG32Fo+JG/QOxZumthNvB1kiRoFFIgQr6nmGcqOXbpZqcq0IiXbLqb8xLhGx8Gzx0rrnRWLiqxt195M9KW+yUDhqT+Lplcju8udYTRYIkWO4g+yNjymvEm4msqo/rssLyVWbpA/lDhyu/FxjAl45guvcKT8Vfh7OwZsVb7vdHheMwIYmc8RridZkJom9MllvsPmnkOuHj8IHi/WTS3VpFZ1qzkGaDOAn+EAPrzFPOEfRVtLrxKarVm817BZXiVXkNZ3LZHd0c0U4nbVWdoFIFO3ac11lByGc5HIjU4qKuEusyt5esvwcvXOSm8Qe/NEeWnXKCSIczZp3nIMbxP0avr5EhPOXKM4IL03VHYRwksuEUjS/C+0tEWHbXritzbpzcCD+0wU7mpwv3mSyJuZeDWVnfFr2w32jQfn/q7JHkdc0zk/qhlGjwUGIBcEb8AacaWTJaMtEKsIeImxrpZyU4Vqx6Hiy/NT5Im4Tk9HjdO8l06OR5WLEmC1fxDjd4N/sHvxA9mh+lOh0Op5jj0mp4/9hai2xFrCpzvLvxwqZ7twSZacJOfh9QkLOGpKTSNv4rej9f9+Bfa2YKt7Ve5DoAfNejZpwv1jYukJ7b3efLlSwzQ1K2UOZLELRInl4S5Fus5HWWQiTcbFYqMzjcLHzslWYU5amzHuhuHdv01qx7BNZBVdYsWPcRIS8rUaKseLvfrEOQ+JuOMiqZrKYmG0oVKSJIglurujh78us2X2miyF+aALeOLHSO1frh7umwqwODlJT0zNGyxykpmaVUDtITU0O/wf+Lw2sCVipRwAAAABJRU5ErkJggg==") left center/contain no-repeat;mask:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAnCAYAAABKSgfJAAAIxUlEQVR4nO3deZBcVRXH8U8yWSAkpMIixRalwiYqiIooGmVRFhUpLFkLVwRlUSIKiAplWcomoKCgYSlXDAKCirggQinKJqhgpCJCJcgawAoMEiCZ5PrH6a6ZDP2Wnu5O3iTvW/VqJv3uve/0m3fuPfd3z30Zk1JSU1PTmrGr2oCamipTO0hNTQ7jVrUBXWAyXo8tsQ2Wox9z8TD+upLsmNKwYbuGHePRhwW4Gw827KkZRXTDQSbjm9gay1qcX4Y/4ZQuXKvJBjgK+2KngrKLcCWuwe8ybOzEjkNwEHYQ9yKPh3FVw55bUXYCuANm4VV4IcOOL+EKTMOpmInFJdsvYgIW4mTci/OwC57voM3xeAjHq3LHkVLq9JiaUro7ZbMkpXRlF64jpbReSumMlNKzOdfLY15K6YAufefTUkrLRmhHSindllKaWfJ6M1P+PU4ppVmNshuklK7vwK4sHk8pvalxjRu71Ob8lNKM1J1noyfHaJmDTBC99DycpLinzmIb0cv+DOuNsI19cY/oTTu5fzvjepxh5N+npseMBgdZG0fgcmzYpTb3w5/FQ9oOR2IOpnfJjrWEw5/b+L2mYlTdQabiy/hWD9reFt9T3kk+g9lYpwe2HCHi+tpJKkaVHWQc3oPP9vAa2+Kixs88DsJXemgHMTqd3uNr1LRJlR3kjbi0jfKLcQduFtJqWbbH1wrOH698775YzFFuEhJzfxu27C86hZqKUNV1kI3xeUwsUfZeIYHehIHGZ2MwA0fjE2Iek8dMMVKdPezzyfiQcNYydpyKX1tRXp2I3YTMvUtG3QEhHJwihIhOeF7Mk+7BkiGfvyBGyj2xfk79nzbqDu0Q+vA0Hi1pw+dwvs5k4GrQBSlsauquzDsmpbRvkT6YUlqaUppTor2ZKeTdIm5NKW0yrO4eKaUnS9S9MqW0ToEdE1JK3xhWb6BRd7sS36GszJt37J1Sur+gnQNLtFMk856UUlq7RDuVP6oYYm2KEwrKDIgFt0NKtHczPornCsrNEOrWUF4nFuHyuA4fLNH+EqFYXYgXRVi3OQ4Qo09NBamig0wRIU8e9+GwNtq8BccWlNnQig7yCrylhB3nKR9KvIgThdOdiMdK1qtZRVTNQdbCrgVl+kWM3W7KyB9Eb5/Hy7BV4/ctFDvI30T6Sjs8h/+1WadmFVE1B5kk8o3yWIjvjKDt+fhFQZlpBiXfDeSHV4uE09W8lDOEUJEKjvnYRIgYj+eUu9pLhYXj8GxOnQXi79kRVXOQsWJxMI/FeGqE7f+74Pw0kXRJpLfk8RQeyDj3WrFSX/SA5B2fKrj+6sLaQoG8XHaouj92FOpkk2Nkp+gsF3O7Zzo1rmoOMkW2FEqEVZ1MaBeLESiL8QZv+pSCtvpFr9cr8qTY1ZFZ8iXukw3ek7OFwJHFUWKLwfJOjaqagxSxVHsLbyOhObeZUVCuXz3J7jaH4pGMc7tjH5FkepjshdsfN44lGefbYrQ5yHis2+Nr9DV+/r3H18mjX3E4uDoyT+TePZ1x/sNi9MgKrR7CJ3VRBKmagzwrJNks+sSOvZEyCRvlnF+q/M3dTMTFNd3lIvxRa5Vyd3xE64TRJPLZOp53DKVqqSbLFX/BSUJdGslEfauC84vE2gbhrHlM1JvMXmKyOprTNOaL8DNPim/uKHyxxblD8BftdYZfFKpiN3eMVs5B+sUIckxOmY1EflW72bVb4L0FZRYZnCg+JfaRvzyj7HQhKFzT4txCfF98l6XDzi0V2QLvEjlnrXhElbehFjNbZ7lYi8UWgKvlj/hNfoNvd3C9TKrmIANi8S2PdUUPc7r2eosd8e6CMk8YjP0XCKk2y0EYTEUZPpo9JkKFLPYS4UIW9+FfeYauAdyCr+ML8hXFh4UkvqgXRlRtDgL/xS8LymyNH7XR5k4iByqPJ/HzIf9+VLxsIo+dRbZvu+wjRrQs/iF7oromca3iF0/8Sg/l9io6yJPye19i5Hu/SDkpYiZ+qHiofsCKDgJ3yV93WUeEAu8sYUeTo4VOn8WDQsOv4SzFyaJH4q0G1ceusjJCrHF4u1gtzfsSfeLhOBR3irypvJBoHA4WG5pm6Ww/yDNiH8Tw/Q53iG25Z+XU3UbMN06Rv8FrfZGlfKz8Vfrb5St5o4E9xXrFgBVXv4fSJzrD74qoYTiniby8Mg/+ReLdaE+0a2gRK8NBxohM2V1LlG32Fo+JG/QOxZumthNvB1kiRoFFIgQr6nmGcqOXbpZqcq0IiXbLqb8xLhGx8Gzx0rrnRWLiqxt195M9KW+yUDhqT+Lplcju8udYTRYIkWO4g+yNjymvEm4msqo/rssLyVWbpA/lDhyu/FxjAl45guvcKT8Vfh7OwZsVb7vdHheMwIYmc8RridZkJom9MllvsPmnkOuHj8IHi/WTS3VpFZ1qzkGaDOAn+EAPrzFPOEfRVtLrxKarVm817BZXiVXkNZ3LZHd0c0U4nbVWdoFIFO3ac11lByGc5HIjU4qKuEusyt5esvwcvXOSm8Qe/NEeWnXKCSIczZp3nIMbxP0avr5EhPOXKM4IL03VHYRwksuEUjS/C+0tEWHbXritzbpzcCD+0wU7mpwv3mSyJuZeDWVnfFr2w32jQfn/q7JHkdc0zk/qhlGjwUGIBcEb8AacaWTJaMtEKsIeImxrpZyU4Vqx6Hiy/NT5Im4Tk9HjdO8l06OR5WLEmC1fxDjd4N/sHvxA9mh+lOh0Op5jj0mp4/9hai2xFrCpzvLvxwqZ7twSZacJOfh9QkLOGpKTSNv4rej9f9+Bfa2YKt7Ve5DoAfNejZpwv1jYukJ7b3efLlSwzQ1K2UOZLELRInl4S5Fus5HWWQiTcbFYqMzjcLHzslWYU5amzHuhuHdv01qx7BNZBVdYsWPcRIS8rUaKseLvfrEOQ+JuOMiqZrKYmG0oVKSJIglurujh78us2X2miyF+aALeOLHSO1frh7umwqwODlJT0zNGyxykpmaVUDtITU0O/wf+Lw2sCVipRwAAAABJRU5ErkJggg==") left center/contain no-repeat;
 }
-.brand-text .t1{font-weight:700;font-size:14.5px;color:var(--chrome-strong);letter-spacing:.2px}
-.brand-text .t2{font-size:10.5px;color:var(--sidebar-text);letter-spacing:.6px;text-transform:uppercase}
+.brand-sys{font-size:11px;font-weight:700;color:var(--text-2);letter-spacing:.7px;text-transform:uppercase}
+.brand-ver{background:none;border:none;padding:0;cursor:pointer;font-size:11px;color:var(--primary-2);font-family:inherit}
+.brand-ver:hover{text-decoration:underline}
+body.sb-collapsed .logo-logitex{width:40px;-webkit-mask-position:left center;mask-position:left center}
 .sidebar-nav{flex:1;overflow-y:auto;padding:10px 10px 14px}
 .sidebar-nav::-webkit-scrollbar-thumb{background:var(--sidebar-border)}
-.nav-section-label{font-size:10.5px;font-weight:700;letter-spacing:.8px;color:var(--chrome-label);text-transform:uppercase;margin:16px 10px 6px;white-space:nowrap}
+.nav-section-label{font-size:10.5px;font-weight:700;letter-spacing:.9px;color:var(--chrome-label);text-transform:uppercase;margin:16px 10px 6px;white-space:nowrap}
 .nav-item{
   display:flex;align-items:center;gap:12px;padding:9px 12px;margin-bottom:2px;border-radius:10px;
   cursor:pointer;color:var(--sidebar-text);font-size:13.5px;font-weight:500;
@@ -227,16 +217,28 @@ body.dark ::-webkit-scrollbar-thumb{background:#334155}
 .nav-item i{width:18px;text-align:center;font-size:14.5px;flex-shrink:0}
 .nav-item:hover{background:var(--chrome-hover);color:var(--chrome-strong)}
 .nav-item.active{background:var(--chrome-active);color:var(--chrome-active-text);font-weight:600}
-.nav-item.active::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;background:#818CF8;border-radius:2px}
+.nav-item.active:hover{background:var(--chrome-active);color:var(--chrome-active-text)}
 .nav-label{overflow:hidden;text-overflow:ellipsis}
-.sidebar-footer{padding:12px 10px;border-top:1px solid var(--sidebar-border)}
-.collapse-btn{
-  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px;border-radius:9px;
+.sidebar-footer{padding:10px;border-top:1px solid var(--sidebar-border);display:flex;flex-direction:column;gap:8px}
+.side-user{display:flex;align-items:center;gap:9px;padding:6px 6px 6px 4px;min-width:0}
+.side-user .who{flex:1;min-width:0;line-height:1.25}
+.side-user .who .name{display:block;font-size:12.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side-user .who .role{display:block;font-size:11px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side-icon-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--chrome-ghost);color:var(--text-2);cursor:pointer;flex-shrink:0}
+.side-icon-btn:hover{color:var(--red);border-color:var(--red)}
+.side-actions{display:flex;gap:6px}
+.side-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 10px;border-radius:8px;
   background:var(--chrome-ghost);color:var(--sidebar-text);border:1px solid var(--sidebar-border);cursor:pointer;font-size:12.5px;
 }
-.collapse-btn:hover{background:var(--chrome-hover);color:var(--chrome-strong)}
+.side-btn:hover{background:var(--chrome-hover);color:var(--chrome-strong)}
+.side-actions .collapse-btn{flex:1}
+body.sb-collapsed .side-user .who,body.sb-collapsed .side-user .side-icon-btn{display:none}
+body.sb-collapsed .side-user{justify-content:center}
+body.sb-collapsed .side-actions{flex-direction:column}
 body.sb-collapsed{--sidebar-w:76px}
 body.sb-collapsed .brand-text,body.sb-collapsed .nav-label,body.sb-collapsed .nav-section-label{display:none}
+body.sb-collapsed .sidebar-brand{padding:18px 10px 14px;align-items:center}
 body.sb-collapsed .nav-item{justify-content:center}
 body.sb-collapsed .collapse-btn i{transform:rotate(180deg)}
 .sidebar-backdrop{display:none}
@@ -246,16 +248,54 @@ body.sb-collapsed .collapse-btn i{transform:rotate(180deg)}
 #topheader{
   min-height:var(--header-h);position:sticky;top:0;z-index:100;
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;row-gap:8px;padding:10px 22px;
-  background:var(--sidebar-bg);border-bottom:1px solid var(--sidebar-border);
-  box-shadow:var(--shadow-sm);color:var(--chrome-strong);
+  /* Fondo translúcido con desenfoque */
+  background:color-mix(in srgb,var(--bg) 78%,transparent);
+  -webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);
+  border-bottom:1px solid var(--border);color:var(--chrome-strong);
 }
+.header-search{position:relative;flex:1 1 280px;max-width:420px;min-width:200px}
+.hs-icono{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;fill:none;stroke:var(--text-2);stroke-width:2.5;stroke-linecap:round;pointer-events:none}
+.header-search input{
+  width:100%;height:36px;padding:0 12px 0 34px;border-radius:9px;border:1px solid var(--border);
+  background:var(--card);color:var(--text);font-size:13px;outline:none;
+}
+.header-search input:focus{border-color:var(--primary-2);box-shadow:0 0 0 3px var(--primary-light)}
+.search-results{
+  display:none;position:absolute;top:42px;left:0;right:0;z-index:300;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;box-shadow:var(--shadow-lg);overflow:hidden;max-height:380px;overflow-y:auto;
+}
+.search-results.open{display:block}
+.sr-item{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border)}
+.sr-item:last-child{border-bottom:none}
+.sr-item:hover,.sr-item.sel{background:var(--primary-light)}
+.sr-item .sr-n{font-weight:600;font-size:13px;color:var(--text)}
+.sr-item .sr-d{font-size:11.5px;color:var(--text-2)}
+.sr-vacio{padding:12px;font-size:12.5px;color:var(--text-2)}
+.kpis-mini{display:flex;gap:6px}
+.kpi-mini{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:58px;padding:3px 9px;border-radius:8px;
+  background:var(--card);border:1px solid var(--border);line-height:1.15}
+.kpi-mini b{font-size:14px;font-weight:800;color:var(--text)}
+.kpi-mini span{font-size:9.5px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.kpi-mini.k-ok b{color:var(--green)}.kpi-mini.k-alerta b{color:var(--orange)}.kpi-mini.k-proc b{color:var(--blue)}
+.lang-menu{position:relative}
+.lang-btn{gap:7px}
+.lang-btn .fa-chevron-down{font-size:9px;opacity:.7}
+.lang-list{display:none;position:absolute;right:0;top:40px;z-index:300;background:var(--card);border:1px solid var(--border);border-radius:10px;
+  box-shadow:var(--shadow-lg);min-width:230px;padding:5px}
+.lang-list.open{display:block}
+.lang-opt{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;white-space:nowrap;border:none;background:none;border-radius:7px;cursor:pointer;
+  font-size:13px;color:var(--text);text-align:left}
+.lang-opt:hover{background:var(--bg-alt)}
+.lang-opt.sel{background:var(--primary-light);color:var(--primary);font-weight:600}
+.bandera{width:20px;height:14px;border-radius:2px;flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,.12);display:block}
 
-.header-left{display:flex;align-items:center;gap:14px;min-width:0;flex:1 1 300px}
+.header-left{display:flex;align-items:center;gap:14px;min-width:0;flex:0 1 330px}
+.header-title .subtitle span:last-child{max-width:280px}
 .header-title{min-width:0}
 .header-title h1{font-size:16px;font-weight:700;color:var(--chrome-strong);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:9px}
 .header-title h1 i{font-size:14px;color:var(--chrome-icon)}
 .header-title .subtitle{font-size:12px;color:var(--sidebar-text);display:flex;align-items:center;gap:6px;margin-top:1px;min-width:0}
-.header-title .subtitle .dot{width:6px;height:6px;border-radius:50%;background:#34D399;flex-shrink:0}
+.header-title .subtitle .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
 .header-title .subtitle span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .icon-btn-ghost{
@@ -274,7 +314,7 @@ body.sb-collapsed .collapse-btn i{transform:rotate(180deg)}
 #topheader .btn:hover{background:var(--chrome-hover)}
 .avatar-chip{display:flex;align-items:center;gap:8px;padding:4px 11px 4px 4px;border-radius:20px;background:var(--chrome-ghost);border:1px solid var(--chrome-ghost-border)}
 .avatar-circle{
-  width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--violet),#6366F1);
+  width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--primary-2));
   color:#fff;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex-shrink:0;
 }
 .avatar-chip .who{font-size:12.5px;line-height:1.2}
@@ -312,7 +352,7 @@ body.sb-collapsed .collapse-btn i{transform:rotate(180deg)}
 .ic-amber{background:var(--warning-light);color:var(--warning-ink)}
 .ic-red{background:var(--danger-light);color:var(--danger-ink)}
 .stat-val{font-size:27px;font-weight:800;color:var(--primary-dark);letter-spacing:-.5px;line-height:1.1}
-body.dark .stat-val{color:var(--text)}
+[data-theme="dark"] body .stat-val{color:var(--text)}
 .stat-lbl{font-size:10.5px;font-weight:600;color:var(--text-faint);text-transform:uppercase;letter-spacing:.5px}
 .stat-card .stat-lbl + .stat-val{margin-top:3px}
 .stat-card .stat-val + .stat-lbl{margin-top:4px}
@@ -359,6 +399,7 @@ td strong,td b{color:var(--text)}
 .badge-warn{background:var(--warning-light);color:var(--warning-ink)}
 .badge-purple{background:var(--violet-light);color:var(--violet-ink)}
 .badge-gray{background:var(--bg-alt);color:var(--text-soft)}
+.badge-violet{background:var(--violet-light);color:var(--violet-ink)}
 .badge-ok::before,.badge-no::before,.badge-warn::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
 .chip{display:inline-block;background:var(--bg-alt);border:1px solid var(--border);border-radius:20px;padding:2px 10px;font-size:11px;color:var(--text-soft)}
 
@@ -379,7 +420,7 @@ td strong,td b{color:var(--text)}
 .btn-secondary{background:var(--surface);color:var(--text-soft)}
 .btn-warning{background:var(--warning-ink);border-color:var(--warning-ink);color:#fff}
 .btn-print{background:var(--violet);border-color:var(--violet);color:#fff}
-body.dark .btn-success,body.dark .btn-warning{color:#0F172A}
+[data-theme="dark"] body .btn-success,[data-theme="dark"] body .btn-warning{color:var(--bg)}
 .btn-sm{padding:6px 10px;font-size:12px;border-radius:7px}
 .btn-sm i{font-size:11.5px}
 .btn-icon{padding:6px 8px}
@@ -441,8 +482,8 @@ body.dark .btn-success,body.dark .btn-warning{color:#0F172A}
 .info-box{border-radius:var(--radius);padding:11px 16px;margin-bottom:14px;font-size:12.5px;border:1px solid}
 .info-blue{background:var(--primary-light);border-color:var(--primary-soft);color:var(--primary-dark)}
 .info-green{background:var(--success-light);border-color:var(--success-soft);color:var(--success-ink)}
-body.dark .info-blue{border-color:var(--border-strong);color:var(--text)}
-body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
+[data-theme="dark"] body .info-blue{border-color:var(--border-strong);color:var(--text)}
+[data-theme="dark"] body .info-green{border-color:var(--success-soft);color:var(--text)}
 
 /* ---------- CUMPLEAÑOS ---------- */
 .bday-panel{padding:12px 16px;margin-bottom:14px}
@@ -451,7 +492,7 @@ body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
 .bday-item.hoy{background:var(--danger-light);border-left-color:var(--danger);font-weight:700}
 .bday-item-name{font-weight:600;color:var(--text)}
 .bday-item-info{color:var(--text-faint);font-size:11px}
-.bday-alert{background:linear-gradient(120deg,#DC2626,#EF4444);color:#fff;border-radius:var(--radius);padding:11px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;animation:pulse 1.8s infinite}
+.bday-alert{background:linear-gradient(120deg,var(--danger-ink),var(--red));color:#fff;border-radius:var(--radius);padding:11px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;animation:pulse 1.8s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.35)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
 
 /* ---------- SUB-TABS (Tablas) ---------- */
@@ -521,7 +562,7 @@ body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
 .gantt-bar.p2{background:var(--serie-2)}
 .gantt-bar.p3{background:var(--serie-3)}
 .gantt-bar.past{opacity:.5}
-.gantt-bar.future{background:#A5B4FC}
+.gantt-bar.future{background:var(--primary-2)}
 .gantt-legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-soft)}
 .gantt-leg-item{display:flex;align-items:center;gap:5px}
 .gantt-leg-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
@@ -553,7 +594,7 @@ body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
 .nivel-1,.mz-1{background:var(--danger-soft);color:var(--danger-ink)}
 .nivel-2,.mz-2{background:var(--warning-soft);color:var(--warning-ink)}
 .nivel-3,.mz-3{background:var(--success-soft);color:var(--success-ink)}
-.nivel-4,.mz-4{background:#6366F1;color:#fff}
+.nivel-4,.mz-4{background:var(--primary-2);color:#fff}
 
 /* ---------- EVALUACIÓN ---------- */
 .eval-section{padding:18px;margin-bottom:14px}
@@ -570,8 +611,8 @@ body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
 .nivel-btn.n2.sel{background:var(--warning-soft);color:var(--warning-ink);border-color:var(--warning)}
 .nivel-btn.n3{background:var(--success-light);color:var(--success-ink);border-color:var(--success-soft)}
 .nivel-btn.n3.sel{background:var(--success-soft);color:var(--success-ink);border-color:var(--success)}
-.nivel-btn.n4{background:#EEF2FF;color:#4338CA;border-color:#C7D2FE}
-.nivel-btn.n4.sel{background:#6366F1;color:#fff;border-color:#6366F1}
+.nivel-btn.n4{background:var(--primary-light);color:var(--primary);border-color:var(--primary-soft)}
+.nivel-btn.n4.sel{background:var(--primary-2);color:#fff;border-color:var(--primary-2)}
 
 /* ---------- MATRIZ ---------- */
 .matriz-wrap{overflow-x:auto}
@@ -603,8 +644,8 @@ body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
   .content{padding:16px}
   #topheader{padding:10px 14px}
   .header-title .subtitle{display:none}
-  .avatar-chip .who{display:none}
-  .avatar-chip{padding:4px}
+  .kpis-mini{display:none}
+  .header-search{order:3;flex-basis:100%;max-width:none}
   #topheader .btn .btn-label{display:none}
 }
 @media (max-width:760px){
@@ -614,7 +655,6 @@ body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
   #main-content{margin-left:0}
   .icon-btn-ghost{display:flex}
   .chip-meta{display:none}
-  .sidebar-footer{display:none}
   .form-grid{grid-template-columns:1fr}
   .stats-row{grid-template-columns:repeat(2,1fr)}
   .filters input[type=text]{min-width:0;flex:1 1 100%}
@@ -624,7 +664,7 @@ body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
   #main-content{margin-left:0}
   .print-form{box-shadow:none!important;padding:0!important;border:none!important}
   body{background:#fff!important;color:#000!important}
-  .items-tbl th{background:#6366F1!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .items-tbl th{background:var(--primary-2)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 
 
@@ -633,6 +673,18 @@ body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
 .ecivil{display:flex;flex-wrap:wrap;gap:4px 12px;min-height:38px;align-items:center;padding:4px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2)}
 .ecivil label{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text);text-transform:none;letter-spacing:0;font-weight:500;margin:0;cursor:pointer}
 .ecivil input{accent-color:var(--primary);width:15px;height:15px}
+
+/* ---------- Guía LOGITEX: historial y modo consulta ---------- */
+.hv-item{padding:11px 0;border-bottom:1px solid var(--border)}
+.hv-item:last-child{border-bottom:none}
+.hv-cab{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.hv-f{font-size:11.5px;color:var(--text-2)}
+.hv-d{font-size:13px;color:var(--text)}
+.ro-oculto{display:none !important}
+body.ro .nivel-btn{pointer-events:none}
+body.ro input:disabled,body.ro select:disabled,body.ro textarea:disabled{opacity:.75;cursor:default}
+body.ro .foto-lbl{display:none !important}
+body.ro .act-add,body.ro .act-acciones{display:none}
 /* ---------- Plantas por usuario ---------- */
 .u-plantas{display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2)}
 .u-plantas label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);text-transform:none;letter-spacing:0;font-weight:500;cursor:pointer}
@@ -648,9 +700,9 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
     #0F172A;
 }
 .login-box{
-  background:rgba(255,255,255,.90);
+  background:color-mix(in srgb,var(--card) 90%,transparent);
   -webkit-backdrop-filter:blur(10px) saturate(1.15);backdrop-filter:blur(10px) saturate(1.15);
-  border:1px solid rgba(255,255,255,.55);
+  border:1px solid color-mix(in srgb,var(--border) 70%,transparent);
 }
 .pass-wrap{position:relative;margin-bottom:14px}
 .pass-wrap input{margin-bottom:0 !important;padding-right:46px !important}
@@ -680,8 +732,8 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
 <div id="login-screen" class="login-screen">
   <div class="login-box">
     <div class="login-brand">
-      <div class="logo-mark"><i class="fa-solid fa-people-group"></i></div>
-      <div><div class="login-logo">LOGITEx RRHH</div><div class="login-sub">Gestión de Recursos Humanos</div></div>
+      <div class="logo-logitex" role="img" aria-label="LOGITEx"></div>
+      <div class="login-sub">Sistema de Recursos Humanos</div>
     </div>
     <label class="login-label">Usuario</label>
     <input type="text" id="login-user" placeholder="Ingrese su usuario" autocomplete="username"
@@ -696,19 +748,30 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
     <button class="login-btn" onclick="doLogin()">Ingresar</button>
     <div id="login-error" class="login-error"><i class="fa-solid fa-circle-xmark"></i> Usuario o contraseña incorrectos</div>
     <div id="login-info" class="login-import-ok"></div>
-    <div class="login-ver">v15 web &mdash; LOGITEx RRHH &mdash; 2026</div>
+    <div class="login-ver"><span data-noi18n>v16</span> &mdash; LOGITEx RRHH &mdash; 2026</div>
   </div>
 </div>
 
 <!-- MENÚ LATERAL -->
 <aside class="sidebar" id="main-nav" style="display:none">
   <div class="sidebar-brand">
-    <div class="logo-mark"><i class="fa-solid fa-people-group"></i></div>
-    <div class="brand-text"><div class="t1">LOGITEx RRHH</div><div class="t2">Recursos Humanos</div></div>
+    <div class="logo-logitex" role="img" aria-label="LOGITEx"></div>
+    <div class="brand-text">
+      <div class="brand-sys">Recursos Humanos</div>
+      <button type="button" class="brand-ver" onclick="abrirHistorial()" title="Ver historial de versiones"><span data-noi18n>v16</span> · historial</button>
+    </div>
   </div>
   <nav class="sidebar-nav" id="nav-tabs"></nav>
   <div class="sidebar-footer">
-    <button class="collapse-btn" onclick="toggleSidebar()"><i class="fa-solid fa-angles-left"></i><span class="nav-label">Colapsar menú</span></button>
+    <div class="side-user">
+      <div class="avatar-circle" id="nav-initials" data-noi18n>—</div>
+      <div class="who"><span class="name" id="nav-username" data-noi18n></span><span class="role" id="nav-rol"></span></div>
+      <button class="side-icon-btn" onclick="doLogout()" title="Cerrar sesión" aria-label="Salir"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+    <div class="side-actions">
+      <button class="side-btn theme-toggle" onclick="toggleTheme()" title="Modo claro / oscuro"><i class="fa-solid fa-sun"></i></button>
+      <button class="side-btn collapse-btn" onclick="toggleSidebar()" title="Colapsar menú"><i class="fa-solid fa-angles-left"></i><span class="nav-label">Colapsar menú</span></button>
+    </div>
   </div>
 </aside>
 <div class="sidebar-backdrop" onclick="document.body.classList.remove('sb-mobile')"></div>
@@ -723,15 +786,20 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
       <div class="subtitle"><span class="dot"></span><span id="pageSubtitle"></span></div>
     </div>
   </div>
+  <div class="header-search">
+    <svg class="hs-icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="busqueda-global" type="search" placeholder="Buscar empleado, legajo o DNI..." autocomplete="off"
+      oninput="buscarGlobal(this.value)" onkeydown="teclaBusquedaGlobal(event)" onfocus="buscarGlobal(this.value)" aria-label="Buscar empleado">
+    <div class="search-results" id="busqueda-resultados" role="listbox"></div>
+  </div>
   <div class="header-right">
+    <div class="kpis-mini" id="kpis-mini"></div>
     <span class="chip-meta" id="chip-guardado" title="Último guardado en la base de datos"><i class="fa-solid fa-database"></i> <b id="meta-guardado">Datos al día</b></span>
     <button class="btn btn-sm" onclick="abrirPanelDatos()" title="Datos, backups y contraseña"><i class="fa-solid fa-gear"></i> <span class="btn-label">Datos</span></button>
-    <button class="btn btn-sm theme-toggle" onclick="toggleTheme()" title="Modo claro / oscuro"><i class="fa-solid fa-moon"></i></button>
-    <div class="avatar-chip">
-      <div class="avatar-circle" id="nav-initials">—</div>
-      <div class="who"><span class="name" id="nav-username"></span><span class="role" id="nav-rol"></span></div>
+    <div class="lang-menu" id="lang-menu">
+      <button class="btn btn-sm lang-btn" onclick="toggleMenuIdioma(event)" aria-haspopup="true" title="Idioma"><span id="lang-actual" data-noi18n></span><i class="fa-solid fa-chevron-down"></i></button>
+      <div class="lang-list" id="lang-list" data-noi18n></div>
     </div>
-    <button class="btn btn-sm" onclick="doLogout()" title="Cerrar sesión"><i class="fa-solid fa-right-from-bracket"></i> <span class="btn-label">Salir</span></button>
   </div>
 </header>
 <div class="content">
@@ -778,7 +846,7 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
       <th>Acciones</th>
     </tr></thead>
     <tbody id="tb-personal"></tbody></table>
-    <div class="tfoot"><span id="tf-personal"></span><span id="tf-personal2" style="color:#94A3B8"></span></div>
+    <div class="tfoot"><span id="tf-personal"></span><span id="tf-personal2" style="color:var(--text-2)"></span></div>
   </div>
 </div>
 
@@ -858,10 +926,10 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
     </tr></thead><tbody id="rows-ropa"></tbody></table>
     <button class="btn btn-secondary btn-sm" style="margin-top:6px" onclick="addRopaRow()"><i class="fa-solid fa-plus"></i> Artículo</button>
     <div style="margin-top:14px">
-      <div style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Observaciones:</div>
-      <textarea style="width:100%;border:1px solid #E2E8F0;border-radius:6px;padding:8px;font-size:12px;height:56px;resize:vertical;outline:none;font-family:inherit" placeholder="Observaciones adicionales..."></textarea>
+      <div style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;margin-bottom:5px">Observaciones:</div>
+      <textarea style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:12px;height:56px;resize:vertical;outline:none;font-family:inherit" placeholder="Observaciones adicionales..."></textarea>
     </div>
-    <p style="margin-top:12px;font-size:11px;color:#64748B;line-height:1.7">Declaro haber recibido los elementos detallados en las condiciones indicadas, comprometiéndome a su correcto uso y conservación conforme las normas de seguridad e higiene vigentes.</p>
+    <p style="margin-top:12px;font-size:11px;color:var(--text-2);line-height:1.7">Declaro haber recibido los elementos detallados en las condiciones indicadas, comprometiéndome a su correcto uso y conservación conforme las normas de seguridad e higiene vigentes.</p>
     <div class="sign-grid sign-grid-3">
       <div class="sign-box"><div class="sign-line"></div><div class="sign-lbl">Firma y aclaración del empleado</div></div>
       <div class="sign-box"><div class="sign-line"></div><div class="sign-lbl">Responsable RRHH</div></div>
@@ -910,8 +978,8 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
       <strong><i class="fa-solid fa-triangle-exclamation"></i> IMPORTANTE:</strong> El equipo entregado es propiedad de la empresa y deberá ser utilizado exclusivamente para fines laborales. Queda expresamente prohibido su uso para fines personales ajenos a la actividad de la empresa.
     </div>
     <div style="margin-top:12px">
-      <div style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Observaciones:</div>
-      <textarea style="width:100%;border:1px solid #E2E8F0;border-radius:6px;padding:8px;font-size:12px;height:56px;resize:vertical;outline:none;font-family:inherit" placeholder="Observaciones..."></textarea>
+      <div style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;margin-bottom:5px">Observaciones:</div>
+      <textarea style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:12px;height:56px;resize:vertical;outline:none;font-family:inherit" placeholder="Observaciones..."></textarea>
     </div>
     <div class="sign-grid sign-grid-3">
       <div class="sign-box"><div class="sign-line"></div><div class="sign-lbl">Firma y aclaración del empleado</div></div>
@@ -940,23 +1008,23 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
     <div class="pfield-grid" id="pf-dom"></div>
     <div class="psec-title">DATOS DE DOMICILIO DECLARADO</div>
     <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px">
-      <tr><td style="padding:7px;font-weight:700;width:180px;border-bottom:1px solid #E2E8F0">Calle y número:</td><td style="border-bottom:1px solid #E2E8F0"><input id="d-calle" type="text" style="width:100%;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
-      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid #E2E8F0">Piso / Dpto / Lote:</td><td style="border-bottom:1px solid #E2E8F0"><input id="d-piso" type="text" style="width:200px;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
-      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid #E2E8F0">Barrio / Localidad:</td><td style="border-bottom:1px solid #E2E8F0"><input id="d-local" type="text" style="width:100%;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
-      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid #E2E8F0">Partido / Municipio:</td><td style="border-bottom:1px solid #E2E8F0"><input id="d-partido" type="text" style="width:100%;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
-      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid #E2E8F0">Provincia:</td><td style="border-bottom:1px solid #E2E8F0"><input id="d-prov" type="text" value="Buenos Aires" style="width:200px;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
-      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid #E2E8F0">Código Postal:</td><td style="border-bottom:1px solid #E2E8F0"><input id="d-cp" type="text" style="width:90px;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
-      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid #E2E8F0">Teléfono contacto:</td><td style="border-bottom:1px solid #E2E8F0"><input id="d-tel" type="text" style="width:200px;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
+      <tr><td style="padding:7px;font-weight:700;width:180px;border-bottom:1px solid var(--border)">Calle y número:</td><td style="border-bottom:1px solid var(--border)"><input id="d-calle" type="text" style="width:100%;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
+      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid var(--border)">Piso / Dpto / Lote:</td><td style="border-bottom:1px solid var(--border)"><input id="d-piso" type="text" style="width:200px;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
+      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid var(--border)">Barrio / Localidad:</td><td style="border-bottom:1px solid var(--border)"><input id="d-local" type="text" style="width:100%;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
+      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid var(--border)">Partido / Municipio:</td><td style="border-bottom:1px solid var(--border)"><input id="d-partido" type="text" style="width:100%;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
+      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid var(--border)">Provincia:</td><td style="border-bottom:1px solid var(--border)"><input id="d-prov" type="text" value="Buenos Aires" style="width:200px;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
+      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid var(--border)">Código Postal:</td><td style="border-bottom:1px solid var(--border)"><input id="d-cp" type="text" style="width:90px;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
+      <tr><td style="padding:7px;font-weight:700;border-bottom:1px solid var(--border)">Teléfono contacto:</td><td style="border-bottom:1px solid var(--border)"><input id="d-tel" type="text" style="width:200px;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
       <tr><td style="padding:7px;font-weight:700">E-mail personal:</td><td><input id="d-email" type="text" style="width:100%;border:none;outline:none;font-size:12px;font-family:inherit;background:transparent"></td></tr>
     </table>
-    <p style="font-size:11px;color:#64748B;line-height:1.8;margin-bottom:22px;text-align:justify">El/la declarante presta conformidad para que los datos denunciados sean utilizados en los procesos de nómina y para todo trámite administrativo necesario, conforme la normativa vigente en materia de protección de datos personales (Ley 25.326).</p>
+    <p style="font-size:11px;color:var(--text-2);line-height:1.8;margin-bottom:22px;text-align:justify">El/la declarante presta conformidad para que los datos denunciados sean utilizados en los procesos de nómina y para todo trámite administrativo necesario, conforme la normativa vigente en materia de protección de datos personales (Ley 25.326).</p>
     
     <div style="margin-top:18px">
       <div class="psec-title"><i class="fa-solid fa-location-dot"></i> CALLES DE REFERENCIA — UBICACIÓN DEL DOMICILIO</div>
       <div id="map-dom"></div>
       <div style="margin-top:6px;display:flex;gap:8px;align-items:center">
         <button class="btn btn-secondary btn-sm" onclick="intentarMapa()"><i class="fa-solid fa-map-location-dot"></i> Ver mapa interactivo</button>
-        <span id="map-coords" style="font-size:11px;color:#64748B"></span>
+        <span id="map-coords" style="font-size:11px;color:var(--text-2)"></span>
       </div>
     </div>
     <div class="sign-grid sign-grid-2">
@@ -1111,7 +1179,7 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
       </div>
       <div style="flex:1">
         <div id="perfil-resumen" style="margin-bottom:12px"></div>
-        <div style="display:flex;gap:6px;border-bottom:1px solid #F1F5F9;margin-bottom:14px">
+        <div style="display:flex;gap:6px;border-bottom:1px solid var(--bg-alt);margin-bottom:14px">
           <button class="form-tab active" onclick="switchTab(this,'tab-datos')"><i class="fa-solid fa-file-lines"></i> Datos</button>
           <button class="form-tab" onclick="switchTab(this,'tab-laboral')"><i class="fa-solid fa-briefcase"></i> Laboral</button>
           <button class="form-tab" onclick="switchTab(this,'tab-banco')"><i class="fa-solid fa-building"></i> Banco</button>
@@ -1207,7 +1275,7 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
       <div class="form-group"><label id="u-pass-label">Contraseña *</label><div class="pass-wrap"><input id="u-pass" type="password" placeholder="mínimo 8 caracteres" autocomplete="new-password"><button type="button" class="pass-toggle" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña" onclick="toggleVerClave('u-pass',this)"><i class="fa-solid fa-eye"></i></button></div></div>
       <div class="form-group full"><label>Nombre completo *</label><input id="u-nombre" type="text"></div>
       <div class="form-group"><label>Rol</label>
-        <select id="u-rol" onchange="actualizarPlantasUsuario()"><option value="admin">Administrador</option><option value="operador">Operador</option></select></div>
+        <select id="u-rol" onchange="actualizarPlantasUsuario()"><option value="admin">Administrador</option><option value="operador">Operador</option><option value="consulta">Consulta (solo lectura)</option></select></div>
       <div class="form-group"><label>Estado</label>
         <select id="u-activo"><option value="1">Activo</option><option value="0">Inactivo</option></select></div>
       <div class="form-group full" id="u-plantas-grupo">
@@ -1234,7 +1302,7 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
     </div>
     <div id="dt-admin" style="display:none;margin-bottom:18px">
       <div style="font-weight:700;font-size:13px;margin-bottom:6px">Restaurar desde un backup (.json)</div>
-      <p style="font-size:12px;color:#64748B;margin-bottom:8px">Reemplaza todos los datos por los del archivo. Antes se guarda una copia automática de la base actual. Los usuarios no se modifican.</p>
+      <p style="font-size:12px;color:var(--text-2);margin-bottom:8px">Reemplaza todos los datos por los del archivo. Antes se guarda una copia automática de la base actual. Los usuarios no se modifican.</p>
       <label class="btn btn-secondary" style="cursor:pointer;margin:0"><i class="fa-solid fa-upload"></i> Elegir archivo…
         <input type="file" accept=".json" style="display:none" onchange="importarArchivo(event)"></label>
       <div style="font-weight:700;font-size:13px;margin:18px 0 6px">Copias automáticas</div>
@@ -1257,6 +1325,8 @@ body.restringido .act-add,body.restringido .act-acciones{display:none}
 <div class="save-indicator" id="save-indicator"><span class="save-dot" id="save-dot"></span><span id="save-msg">Guardando...</span></div>
 <input type="file" id="db-file-input" accept=".json" style="display:none" onchange="importarArchivo(event)">
 <script>
+// Variables de color del modo claro, para las impresiones (actas)
+var _CSS_VARS_IMPRESION=":root{ --primary:#4F46E5; --primary-2:#6366F1; --bg:#F4F5FA; --card:#FFFFFF; --side:#FFFFFF; --text:#1E1B4B; --text-2:#6B7280; --border:#E5E7EB; --red:#EF4444; --blue:#3B82F6; --green:#10B981; --orange:#F59E0B; --violet:#8B5CF6; --surface:var(--card); --surface-2:var(--bg); --bg-alt:color-mix(in srgb,var(--text-2) 8%,var(--card)); --border-strong:color-mix(in srgb,var(--text-2) 30%,var(--border)); --text-soft:color-mix(in srgb,var(--text) 72%,var(--text-2)); --text-faint:var(--text-2); --primary-dark:color-mix(in srgb,var(--primary) 80%,#000); --primary-hover:color-mix(in srgb,var(--primary) 88%,#000); --primary-light:color-mix(in srgb,var(--primary-2) 9%,var(--card)); --primary-soft:color-mix(in srgb,var(--primary-2) 20%,var(--card)); --accent:var(--primary-2); --accent-light:var(--primary-soft); --success:var(--green); --warning:var(--orange); --danger:var(--red); --info:var(--blue); --neutral:var(--text-2); --success-light:color-mix(in srgb,var(--green) 12%,var(--card)); --warning-light:color-mix(in srgb,var(--orange) 14%,var(--card)); --danger-light:color-mix(in srgb,var(--red) 11%,var(--card)); --violet-light:color-mix(in srgb,var(--violet) 11%,var(--card)); --info-light:color-mix(in srgb,var(--blue) 12%,var(--card)); --success-soft:color-mix(in srgb,var(--green) 26%,var(--card)); --warning-soft:color-mix(in srgb,var(--orange) 30%,var(--card)); --danger-soft:color-mix(in srgb,var(--red) 24%,var(--card)); --success-ink:color-mix(in srgb,var(--green) 60%,#000); --warning-ink:color-mix(in srgb,var(--orange) 58%,#000); --danger-ink:color-mix(in srgb,var(--red) 80%,#000); --violet-ink:color-mix(in srgb,var(--violet) 82%,#000); --info-ink:color-mix(in srgb,var(--blue) 80%,#000); --serie-1:var(--primary-2);--serie-2:var(--blue);--serie-3:var(--violet);--serie-4:var(--green);--serie-5:var(--orange);--serie-6:var(--red); --sidebar-bg:var(--side); --sidebar-bg-2:var(--side); --sidebar-text:var(--text-2); --sidebar-border:var(--border); --chrome-strong:var(--text); --chrome-label:var(--text-2); --chrome-ghost:var(--bg); --chrome-ghost-border:var(--border); --chrome-hover:var(--bg-alt); --chrome-active:var(--primary); --chrome-active-text:#FFFFFF; --chrome-icon:var(--primary-2); --th-grupo-bg:var(--side); --th-bg:var(--side); --th-total-bg:var(--side); --th-text:var(--text-2); --th-grupo-text:var(--primary-2); --th-linea:var(--border); --radius-sm:8px; --radius:10px; --radius-lg:12px; --shadow-sm:0 1px 2px rgba(17,20,29,.05); --shadow:0 2px 8px rgba(17,20,29,.06); --shadow-lg:0 12px 32px rgba(17,20,29,.14); --sidebar-w:240px; --header-h:64px; }";
 
 // ══════════════════════════════════════════════════════════════════
 // CONFIGURACIÓN DE USUARIOS
@@ -1295,7 +1365,7 @@ function ant(ini){
 function diasLey(a){if(a<1)return 0;if(a<5)return 14;if(a<10)return 21;if(a<20)return 28;return 35;}
 function tramoLey(a){if(a<1)return'< 1 año';if(a<5)return'1 – 5 años';if(a<10)return'5 – 10 años';if(a<20)return'10 – 20 años';return'> 20 años';}
 function initials(n){return n.split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();}
-var COLS=['#6366F1','#8B5CF6','#10B981','#3B82F6','#EC4899','#0EA5E9','#4338CA','#F59E0B'];
+var COLS=['var(--primary)','var(--violet)','var(--green)','var(--blue)','var(--orange)','var(--red)','var(--primary-2)'];
 function colorFor(n){var h=0;for(var i=0;i<n.length;i++)h+=n.charCodeAt(i);return COLS[h%COLS.length];}
 function gid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
 function todayISO(){return new Date().toISOString().split('T')[0];}
@@ -1386,13 +1456,289 @@ function textoPlantas(u){
   if(u.rol==='admin'||!u.plantas||!u.plantas.length)return 'Todas las plantas';
   return u.plantas.join(', ');
 }
+// ════════════════════════════════════════════════════════════════
+// IDIOMAS: español (por defecto), inglés y portugués
+// El HTML está escrito en español; un diccionario y patrones traducen los textos de la interfaz.
+// No se traducen los datos del usuario ni lo marcado con data-noi18n.
+// ════════════════════════════════════════════════════════════════
+var BANDERAS={
+  es:'<svg class="bandera" viewBox="0 0 20 14" aria-hidden="true"><rect width="20" height="14" fill="#74ACDF"/><rect y="4.67" width="20" height="4.67" fill="#fff"/><circle cx="10" cy="7" r="1.6" fill="#F6B40E"/></svg>',
+  en:'<svg class="bandera" viewBox="0 0 20 14" aria-hidden="true"><rect width="20" height="14" fill="#fff"/><g fill="#B22234"><rect width="20" height="1.08"/><rect y="2.15" width="20" height="1.08"/><rect y="4.31" width="20" height="1.08"/><rect y="6.46" width="20" height="1.08"/><rect y="8.62" width="20" height="1.08"/><rect y="10.77" width="20" height="1.08"/><rect y="12.92" width="20" height="1.08"/></g><rect width="8.6" height="7.54" fill="#3C3B6E"/></svg>',
+  pt:'<svg class="bandera" viewBox="0 0 20 14" aria-hidden="true"><rect width="20" height="14" fill="#009C3B"/><polygon points="10,1.6 18.2,7 10,12.4 1.8,7" fill="#FFDF00"/><circle cx="10" cy="7" r="3" fill="#002776"/></svg>'
+};
+var IDIOMAS={es:{code:'ES',nombre:'Español (Argentina)',locale:'es-AR'},en:{code:'EN',nombre:'English (US)',locale:'en-US'},pt:{code:'PT',nombre:'Português (Brasil)',locale:'pt-BR'}};
+var idioma='es';
+try{var _li=localStorage.getItem('rrhh_lang');if(IDIOMAS[_li])idioma=_li;}catch(e){}
+var I18N={en:{},pt:{}};          // texto en español -> traducción
+var I18N_PATRONES=[];            // [regex, {en:'…', pt:'…'}] para textos con números
+// Diccionario y patrones de la interfaz
+I18N.en={"Nómina": "Payroll", "Actas y formularios": "Records and forms", "Competencias": "Skills", "Sistema": "System", "Personal": "Staff", "Vacaciones": "Vacations", "Gantt Vacaciones": "Vacation Gantt", "Indumentaria / EPP": "Clothing / PPE", "Equipos IT": "IT equipment", "Domicilio": "Address", "Actividades por puesto": "Activities by position", "Evaluación": "Assessment", "Matriz Sustitución": "Substitution matrix", "Tablas": "Tables", "Usuarios": "Users", "Colapsar menú": "Collapse menu", "Menú": "Menu", "Recursos Humanos": "Human Resources", "Sistema de Recursos Humanos": "Human Resources System", "Sistema de RRHH LOGITEx": "LOGITEx HR System", "· historial": "· history", "Ver historial de versiones": "View version history", "Historial de versiones": "Version history", "Cerrar sesión": "Log out", "Salir": "Log out", "Modo claro / oscuro": "Light / dark mode", "Pasar a modo claro": "Switch to light mode", "Pasar a modo oscuro": "Switch to dark mode", "Idioma": "Language", "Administrador": "Administrator", "Operador": "Operator", "Consulta": "Read-only", "Consulta (solo lectura)": "Read-only", "Buscar empleado, legajo o DNI...": "Search employee, file no. or ID...", "Buscar empleado": "Search employee", "Buscar empleado...": "Search employee...", "Sin resultados": "No results", "Activos": "Active", "Empleados activos": "Active employees", "De vacaciones hoy": "On vacation today", "Plantas con personal activo": "Plants with active staff", "Datos al día": "Data up to date", "Último guardado en la base de datos": "Last saved to the database", "Datos": "Data", "Datos, backups y contraseña": "Data, backups and password", "Guardando...": "Saving...", "Usuario": "User", "Contraseña": "Password", "Ingrese su usuario": "Enter your username", "Ingrese su contraseña": "Enter your password", "Ingresar": "Log in", "Mostrar contraseña": "Show password", "Ocultar contraseña": "Hide password", "Usuario o contraseña incorrectos": "Incorrect username or password", "Gestión completa del personal LOGITEx": "Complete LOGITEx staff management", "Nómina de Empleados": "Employee payroll", "Excel": "Excel", "CSV": "CSV", "Backup": "Backup", "Exportar la nómina a Excel (.xlsx)": "Export payroll to Excel (.xlsx)", "Exportar la nómina a CSV": "Export payroll to CSV", "Guardar una copia de seguridad completa": "Save a full backup", "Total histórico": "Historical total", "Plantas": "Plants", "Gerentes": "Managers", "Inactivos / Bajas": "Inactive / Leavers", "Cumpleaños próximos": "Upcoming birthdays", "(próximos 7 días)": "(next 7 days)", "Nombre, legajo, DNI, puesto...": "Name, file no., ID, position...", "Todas las plantas": "All plants", "Todos los sectores": "All sectors", "Todos los puestos": "All positions", "Todos los tramos": "All ranges", "Solo activos": "Active only", "Solo inactivos": "Inactive only", "Todos": "All", "Todas": "All", "Nuevo empleado": "New employee", "Legajo": "File no.", "Nombre": "Name", "Planta": "Plant", "Sector": "Sector", "Puesto": "Position", "Categoría": "Category", "Cobertura": "Coverage", "Ingreso": "Start date", "Consultora": "Agency", "Antigüedad": "Seniority", "Vac.": "Vac.", "Estado": "Status", "Acciones": "Actions", "Activo": "Active", "✓ Activo": "✓ Active", "Inactivo": "Inactive", "Inactivo / Baja": "Inactive / Left", "Editar": "Edit", "Eliminar": "Delete", "Ver/Editar": "View/Edit", "✕ Borrar filtros": "✕ Clear filters", "Proporcional": "Proportional", "proporcional": "proportional", "¡HOY cumple años!": "Birthday TODAY!", "¡FELIZ CUMPLEAÑOS!": "HAPPY BIRTHDAY!", "Datos del empleado": "Employee details", "Laboral": "Employment", "Equipos": "Equipment", "Nombre completo *": "Full name *", "Legajo / DNI *": "File no. / ID *", "CUIT": "Tax ID (CUIT)", "Fecha nacimiento": "Date of birth", "Celular personal": "Personal mobile", "Celular laboral": "Work mobile", "Idioma(s)": "Language(s)", "Cobertura médica": "Health insurance", "Banco": "Bank", "CBU": "Bank account (CBU)", "Alias CBU": "CBU alias", "Localidad": "Town", "Provincia": "Province", "Teléfono contacto familiar": "Family contact phone", "Relación con el contacto": "Relationship to contact", "Ej: 351 555-1234": "e.g. 351 555-1234", "Ej: Madre, Esposo/a, Hermano/a": "e.g. Mother, Spouse, Sibling", "Madre": "Mother", "Padre": "Father", "Esposo/a": "Spouse", "Pareja": "Partner", "Hijo/a": "Son/Daughter", "Hermano/a": "Sibling", "Otro familiar": "Other relative", "Estado civil": "Marital status", "Soltero/a": "Single", "Casado/a": "Married", "En pareja": "In a relationship", "Viudo/a": "Widowed", "Cantidad de hijos": "Number of children", "Planta *": "Plant *", "Sector *": "Sector *", "Puesto *": "Position *", "Fecha de ingreso *": "Start date *", "Fecha de baja": "Termination date", "Motivo de la baja": "Reason for leaving", "Ej: Renuncia, Despido, Fin de contrato": "e.g. Resignation, Dismissal, End of contract", "Renuncia": "Resignation", "Despido con causa": "Dismissal with cause", "Despido sin causa": "Dismissal without cause", "Fin de contrato": "End of contract", "Jubilación": "Retirement", "Mutuo acuerdo": "Mutual agreement", "Fallecimiento": "Death", "Consultora / Tercero": "Agency / Third party", "Ej: Randstad, Manpower...": "e.g. Randstad, Manpower...", "Inicio en consultora": "Start at agency", "Fin en consultora": "End at agency", "Seleccionar...": "Select...", "Cambiar foto": "Change photo", "Cambiar": "Change", "Guardar": "Save", "Cancelar": "Cancel", "Cerrar": "Close", "Computación": "Computers", "Telefonía corporativa": "Corporate phones", "Sin equipos asignados — usá el botón + para agregar": "No equipment assigned — use the + button to add", "Sin teléfonos asignados — usá el botón + para agregar": "No phones assigned — use the + button to add", "Cálculo automático LCT · Registro de períodos · Gantt de planificación": "Automatic LCT calculation · Period log · Planning Gantt", "Escala LCT Art. 150": "LCT scale Art. 150", "Escala": "Scale", "Días LCT / Usados": "LCT days / Used", "Días LCT": "LCT days", "Período 1 — Salida / Retorno": "Period 1 — Out / Back", "Período 2 — Salida / Retorno": "Period 2 — Out / Back", "Período 3 — Salida / Retorno": "Period 3 — Out / Back", "Sal": "Out", "Ret": "Back", "Salida": "Departure", "Retorno": "Return", "Períodos de vacaciones": "Vacation periods", "Menos de 1 año": "Less than 1 year", "1 a 5 años": "1 to 5 years", "5 a 10 años": "5 to 10 years", "10 a 20 años": "10 to 20 years", "Más de 20 años": "More than 20 years", "<1 año": "<1 year", "1–5 años": "1–5 years", "5–10 años": "5–10 years", "10–20 años": "10–20 years", ">20 años": ">20 years", "5 (cinco) días hábiles": "5 (five) business days", "Visualización de períodos planificados por empleado": "Planned periods by employee", "Gantt de Vacaciones": "Vacation Gantt", "Empleado": "Employee", "Ene": "Jan", "Feb": "Feb", "Mar": "Mar", "Abr": "Apr", "May": "May", "Jun": "Jun", "Jul": "Jul", "Ago": "Aug", "Sep": "Sep", "Oct": "Oct", "Nov": "Nov", "Dic": "Dec", "Referencias": "Legend", "Referencia": "Legend", "Período 1": "Period 1", "Período 2": "Period 2", "Período 3": "Period 3", "Hoy": "Today", "pasado": "past", "Período ya concluido": "Period already ended", "Sin períodos cargados": "No periods loaded", "Entrega de Indumentaria / EPP": "Clothing / PPE delivery", "Acta de entrega de ropa de trabajo y elementos de protección personal": "Delivery record for work clothing and personal protective equipment", "Acta de entrega de equipos informáticos y telefonía corporativa": "Delivery record for IT equipment and corporate phones", "ACTA DE ENTREGA DE INDUMENTARIA Y EPP": "CLOTHING AND PPE DELIVERY RECORD", "ACTA DE ENTREGA — EQUIPOS IT": "DELIVERY RECORD — IT EQUIPMENT", "DATOS DEL EMPLEADO": "EMPLOYEE DETAILS", "DETALLE DE ELEMENTOS ENTREGADOS": "ITEMS DELIVERED", "COMPUTACIÓN": "COMPUTERS", "TELEFONÍA": "PHONES", "Artículo": "Item", "Artículo / Descripción": "Item / Description", "Talle / Color": "Size / Color", "Cant.": "Qty.", "F. Entrega": "Delivery date", "Tipo": "Type", "Marca": "Brand", "Modelo": "Model", "N° de Serie": "Serial no.", "Notebook / Equipo": "Laptop / Device", "Teléfono": "Phone", "Empresa": "Company", "N°": "No.", "Agregar": "Add", "+ Agregar": "+ Add", "Limpiar": "Clear", "Limpiar filas": "Clear rows", "Imprimir / PDF": "Print / PDF", "Observaciones": "Notes", "IMPORTANTE": "IMPORTANT", "Declaro haber recibido los elementos detallados en las condiciones indicadas, comprometiéndome a su correcto uso y conservación conforme las normas de seguridad e higiene vigentes.": "I declare that I have received the items listed in the stated condition, and I undertake to use and keep them properly in accordance with current health and safety regulations.", "El equipo entregado es propiedad de la empresa y deberá ser utilizado exclusivamente para fines laborales. Queda expresamente prohibido su uso para fines personales ajenos a la actividad de la empresa.": "The equipment delivered is company property and must be used exclusively for work purposes. Its use for personal purposes unrelated to the company's activity is expressly prohibited.", "Firma y aclaración del empleado": "Employee signature and printed name", "Firma y aclaración del empleado / N° DNI": "Employee signature, printed name / ID no.", "Firma, sello y fecha — Responsable RRHH": "Signature, stamp and date — HR officer", "Responsable RRHH": "HR officer", "Responsable IT / RRHH": "IT / HR officer", "Sello y firma empresa": "Company stamp and signature", "— Seleccionar empleado —": "— Select employee —", "Declaración Jurada de Domicilio": "Sworn statement of address", "DECLARACIÓN JURADA DE DOMICILIO": "SWORN STATEMENT OF ADDRESS", "Formulario oficial de declaración de domicilio del personal": "Official staff address declaration form", "DATOS DE DOMICILIO DECLARADO": "DECLARED ADDRESS", "Calle y número": "Street and number", "Piso / Dpto / Lote": "Floor / Apt / Lot", "Barrio / Localidad": "Neighborhood / Town", "Partido / Municipio": "District / Municipality", "Código Postal": "Postal code", "Teléfono contacto": "Contact phone", "E-mail personal": "Personal e-mail", "CALLES DE REFERENCIA — UBICACIÓN DEL DOMICILIO": "REFERENCE STREETS — ADDRESS LOCATION", "Nombre de calle": "Street name", "Altura": "Number", "Ver mapa interactivo": "View interactive map", "Por medio de la presente, el/la suscripto/a declara bajo juramento que los datos consignados a continuación son exactos y verídicos, comprometiéndose a comunicar en forma fehaciente cualquier modificación dentro de los": "I, the undersigned, hereby declare under oath that the information below is accurate and true, and I undertake to give formal notice of any change within", "de producido el cambio, para su actualización en el legajo personal.": "of the change, so that the personal file can be updated.", "El/la declarante presta conformidad para que los datos denunciados sean utilizados en los procesos de nómina y para todo trámite administrativo necesario, conforme la normativa vigente en materia de protección de datos personales (Ley 25.326).": "The declarant agrees that the data provided may be used for payroll processes and any necessary administrative procedure, in accordance with current personal data protection regulations (Law 25,326).", "Grilla de Actividades por Puesto": "Activities by position grid", "Agregá, renombrá o eliminá las actividades de cada puesto — base para evaluación y sustitución": "Add, rename or delete each position's activities — the basis for assessment and substitution", "Buscar actividad o puesto...": "Search activity or position...", "Expandir / Colapsar todo": "Expand / Collapse all", "Actividad": "Activity", "Actividades": "Activities", "Eliminar actividad": "Delete activity", "Cambiar nombre": "Rename", "Nombre de la actividad...": "Activity name...", "Planta de la actividad": "Activity plant", "— Planta (opcional) —": "— Plant (optional) —", "— Puesto relacionado —": "— Related position —", "(sin actividades)": "(no activities)", "Este puesto todavía no tiene actividades. Agregá la primera abajo.": "This position has no activities yet. Add the first one below.", "Evaluá el nivel de dominio de cada empleado por actividad": "Assess each employee's proficiency level per activity", "Planilla de Evaluación de Competencias": "Skills assessment sheet", "Completá el nivel de dominio para cada actividad. Los cambios se reflejan automáticamente en la Matriz de Sustitución.": "Fill in the proficiency level for each activity. Changes are reflected automatically in the Substitution matrix.", "Todas las actividades": "All activities", "Guardar evaluación": "Save assessment", "Seleccioná un empleado para evaluar": "Select an employee to assess", "Sin conocimiento": "No knowledge", "En formación": "In training", "Básico": "Basic", "Autónomo": "Independent", "Experto": "Expert", "Experto / Puede enseñar": "Expert / Can teach", "Matriz de Sustitución": "Substitution matrix", "Nivel de dominio de cada empleado por actividad — generada desde las evaluaciones": "Each employee's proficiency per activity — generated from the assessments", "Exportar CSV": "Export CSV", "Puesto · Planta": "Position · Plant", "Total": "Total", "promedio": "average", "Tablas del Sistema": "System tables", "Administrá los valores de plantas, sectores, puestos y actividades": "Manage the values for plants, sectors, positions and activities", "Sectores": "Sectors", "Puestos": "Positions", "Nueva planta...": "New plant...", "Nuevo sector...": "New sector...", "Nuevo puesto...": "New position...", "Gestión de Usuarios": "User management", "Administración de accesos al sistema": "System access management", "Nuevo usuario": "New user", "Usuario *": "User *", "Contraseña *": "Password *", "ej: jperez": "e.g. jsmith", "mínimo 8 caracteres": "at least 8 characters", "Rol": "Role", "Plantas que puede ver": "Plants this user can see", "Los administradores ven todas las plantas.": "Administrators see all plants.", "Sin plantas marcadas, ve todas las plantas.": "With no plants ticked, the user sees all plants.", "Solo va a ver y modificar personal de las plantas marcadas.": "Will only see and edit staff from the ticked plants.", "Ingresó": "Last login", "Datos y seguridad": "Data and security", "Los datos se guardan en una base de datos en la nube. Cada día se guarda una copia automática.": "Data is stored in a cloud database. An automatic copy is saved every day.", "Descargar backup (.json)": "Download backup (.json)", "Restaurar desde un backup (.json)": "Restore from a backup (.json)", "Reemplaza todos los datos por los del archivo. Antes se guarda una copia automática de la base actual. Los usuarios no se modifican.": "Replaces all data with the file's data. A copy of the current database is saved first. Users are not changed.", "Copias automáticas": "Automatic copies", "Se guardan una por día y antes de cada restauración (las últimas 30).": "One is saved per day and before each restore (the last 30 are kept).", "Todavía no hay copias. Se crea la primera al guardar cambios.": "No copies yet. The first one is created when changes are saved.", "Cambiar mi contraseña": "Change my password", "Contraseña actual": "Current password", "Contraseña nueva": "New password", "Repetir nueva": "Repeat new password", "Historial de actividad": "Activity log", "Guardó datos": "Saved data", "Creó usuario": "Created user", "Elegir archivo…": "Choose file…", "Guía de diseño LOGITEX: colores oficiales, menú con logo y versión, buscador y KPIs en el encabezado, idiomas español, inglés y portugués, rol Consulta (solo lectura).": "LOGITEX design guide: official colors, menu with logo and version, search and KPIs in the header, Spanish, English and Portuguese, read-only role.", "Encabezados de columnas (Gantt, Matriz, actas) siguen el modo claro u oscuro.": "Column headers (Gantt, Matrix, records) follow light or dark mode.", "Edición simultánea: varios usuarios pueden guardar a la vez. Menú y encabezado siguen el tema.": "Simultaneous editing: several users can save at once. Menu and header follow the theme.", "Paleta de colores oficial. Aviso de cumpleaños visible para todos los usuarios.": "Official color palette. Birthday alert visible to all users.", "Datos familiares (contacto, estado civil, hijos) y motivo de la baja.": "Family details (contact, marital status, children) and reason for leaving.", "Plantas por usuario: el operador solo ve y modifica sus plantas.": "Plants per user: operators only see and edit their plants.", "Versión web en Vercel con base de datos: imagen en el ingreso, ver contraseña, actividades por puesto, corrección de la edad en cumpleaños.": "Web version on Vercel with a database: login image, show password, activities by position, birthday age fix.", "Cantidad de hijos: ingresá un número entero entre 0 y 30.": "Number of children: enter a whole number between 0 and 30.", "Completá la contraseña actual y la nueva.": "Enter the current and the new password.", "El archivo no tiene una lista de empleados.": "The file has no employee list.", "Ese puesto ya tiene una actividad con ese nombre.": "That position already has an activity with that name.", "Generá la matriz primero": "Generate the matrix first", "Ingresá al menos la calle para buscar en el mapa.": "Enter at least the street to search on the map.", "Ingresá el nombre de la actividad.": "Enter the activity name.", "La contraseña es obligatoria para un usuario nuevo": "A password is required for a new user", "La contraseña nueva debe tener al menos 8 caracteres.": "The new password must be at least 8 characters long.", "Las contraseñas nuevas no coinciden.": "The new passwords do not match.", "No podés eliminar tu propio usuario": "You cannot delete your own user", "Nombre y Legajo son obligatorios": "Name and file no. are required", "Seleccioná un empleado": "Select an employee", "Solo un administrador puede restaurar datos.": "Only an administrator can restore data.", "Usuario y nombre son obligatorios": "User and name are required", "Ya existe ese valor.": "That value already exists.", "Ya existe un empleado con ese legajo": "An employee with that file no. already exists", "✅ Contraseña actualizada.": "✅ Password updated.", "Hay cambios que no se pudieron guardar. ¿Salir igual?": "Some changes could not be saved. Log out anyway?", "Limpiar todas las evaluaciones de este empleado?": "Clear all of this employee's assessments?", "Otro usuario eliminó un empleado que estabas editando": "Another user deleted an employee you were editing", "Tu usuario es de consulta: puede ver, filtrar y ordenar, pero no modificar datos.": "Your user is read-only: you can view, filter and sort, but not change data."};
+I18N.pt={"Nómina": "Folha", "Actas y formularios": "Atas e formulários", "Competencias": "Competências", "Sistema": "Sistema", "Personal": "Pessoal", "Vacaciones": "Férias", "Gantt Vacaciones": "Gantt de férias", "Indumentaria / EPP": "Uniformes / EPI", "Equipos IT": "Equipamentos de TI", "Domicilio": "Endereço", "Actividades por puesto": "Atividades por cargo", "Evaluación": "Avaliação", "Matriz Sustitución": "Matriz de substituição", "Tablas": "Tabelas", "Usuarios": "Usuários", "Colapsar menú": "Recolher menu", "Menú": "Menu", "Recursos Humanos": "Recursos Humanos", "Sistema de Recursos Humanos": "Sistema de Recursos Humanos", "Sistema de RRHH LOGITEx": "Sistema de RH LOGITEx", "· historial": "· histórico", "Ver historial de versiones": "Ver histórico de versões", "Historial de versiones": "Histórico de versões", "Cerrar sesión": "Sair", "Salir": "Sair", "Modo claro / oscuro": "Modo claro / escuro", "Pasar a modo claro": "Mudar para modo claro", "Pasar a modo oscuro": "Mudar para modo escuro", "Idioma": "Idioma", "Administrador": "Administrador", "Operador": "Operador", "Consulta": "Consulta", "Consulta (solo lectura)": "Consulta (somente leitura)", "Buscar empleado, legajo o DNI...": "Buscar funcionário, matrícula ou documento...", "Buscar empleado": "Buscar funcionário", "Buscar empleado...": "Buscar funcionário...", "Sin resultados": "Sem resultados", "Activos": "Ativos", "Empleados activos": "Funcionários ativos", "De vacaciones hoy": "De férias hoje", "Plantas con personal activo": "Plantas com pessoal ativo", "Datos al día": "Dados em dia", "Último guardado en la base de datos": "Último salvamento no banco de dados", "Datos": "Dados", "Datos, backups y contraseña": "Dados, backups e senha", "Guardando...": "Salvando...", "Usuario": "Usuário", "Contraseña": "Senha", "Ingrese su usuario": "Digite seu usuário", "Ingrese su contraseña": "Digite sua senha", "Ingresar": "Entrar", "Mostrar contraseña": "Mostrar senha", "Ocultar contraseña": "Ocultar senha", "Usuario o contraseña incorrectos": "Usuário ou senha incorretos", "Gestión completa del personal LOGITEx": "Gestão completa do pessoal LOGITEx", "Nómina de Empleados": "Folha de funcionários", "Excel": "Excel", "CSV": "CSV", "Backup": "Backup", "Exportar la nómina a Excel (.xlsx)": "Exportar a folha para Excel (.xlsx)", "Exportar la nómina a CSV": "Exportar a folha para CSV", "Guardar una copia de seguridad completa": "Salvar uma cópia de segurança completa", "Total histórico": "Total histórico", "Plantas": "Plantas", "Gerentes": "Gerentes", "Inactivos / Bajas": "Inativos / Desligados", "Cumpleaños próximos": "Próximos aniversários", "(próximos 7 días)": "(próximos 7 dias)", "Nombre, legajo, DNI, puesto...": "Nome, matrícula, documento, cargo...", "Todas las plantas": "Todas as plantas", "Todos los sectores": "Todos os setores", "Todos los puestos": "Todos os cargos", "Todos los tramos": "Todas as faixas", "Solo activos": "Somente ativos", "Solo inactivos": "Somente inativos", "Todos": "Todos", "Todas": "Todas", "Nuevo empleado": "Novo funcionário", "Legajo": "Matrícula", "Nombre": "Nome", "Planta": "Planta", "Sector": "Setor", "Puesto": "Cargo", "Categoría": "Categoria", "Cobertura": "Cobertura", "Ingreso": "Admissão", "Consultora": "Consultoria", "Antigüedad": "Antiguidade", "Vac.": "Férias", "Estado": "Status", "Acciones": "Ações", "Activo": "Ativo", "✓ Activo": "✓ Ativo", "Inactivo": "Inativo", "Inactivo / Baja": "Inativo / Desligado", "Editar": "Editar", "Eliminar": "Excluir", "Ver/Editar": "Ver/Editar", "✕ Borrar filtros": "✕ Limpar filtros", "Proporcional": "Proporcional", "proporcional": "proporcional", "¡HOY cumple años!": "Aniversário HOJE!", "¡FELIZ CUMPLEAÑOS!": "FELIZ ANIVERSÁRIO!", "Datos del empleado": "Dados do funcionário", "Laboral": "Trabalho", "Equipos": "Equipamentos", "Nombre completo *": "Nome completo *", "Legajo / DNI *": "Matrícula / Documento *", "CUIT": "CUIT", "Fecha nacimiento": "Data de nascimento", "Celular personal": "Celular pessoal", "Celular laboral": "Celular corporativo", "Idioma(s)": "Idioma(s)", "Cobertura médica": "Plano de saúde", "Banco": "Banco", "CBU": "Conta (CBU)", "Alias CBU": "Apelido CBU", "Localidad": "Localidade", "Provincia": "Província", "Teléfono contacto familiar": "Telefone de contato familiar", "Relación con el contacto": "Parentesco do contato", "Ej: 351 555-1234": "Ex.: 351 555-1234", "Ej: Madre, Esposo/a, Hermano/a": "Ex.: Mãe, Cônjuge, Irmão/ã", "Madre": "Mãe", "Padre": "Pai", "Esposo/a": "Cônjuge", "Pareja": "Companheiro/a", "Hijo/a": "Filho/a", "Hermano/a": "Irmão/ã", "Otro familiar": "Outro familiar", "Estado civil": "Estado civil", "Soltero/a": "Solteiro/a", "Casado/a": "Casado/a", "En pareja": "Em união estável", "Viudo/a": "Viúvo/a", "Cantidad de hijos": "Número de filhos", "Planta *": "Planta *", "Sector *": "Setor *", "Puesto *": "Cargo *", "Fecha de ingreso *": "Data de admissão *", "Fecha de baja": "Data de desligamento", "Motivo de la baja": "Motivo do desligamento", "Ej: Renuncia, Despido, Fin de contrato": "Ex.: Demissão voluntária, Dispensa, Fim de contrato", "Renuncia": "Pedido de demissão", "Despido con causa": "Dispensa com justa causa", "Despido sin causa": "Dispensa sem justa causa", "Fin de contrato": "Fim de contrato", "Jubilación": "Aposentadoria", "Mutuo acuerdo": "Acordo mútuo", "Fallecimiento": "Falecimento", "Consultora / Tercero": "Consultoria / Terceiro", "Ej: Randstad, Manpower...": "Ex.: Randstad, Manpower...", "Inicio en consultora": "Início na consultoria", "Fin en consultora": "Fim na consultoria", "Seleccionar...": "Selecionar...", "Cambiar foto": "Trocar foto", "Cambiar": "Trocar", "Guardar": "Salvar", "Cancelar": "Cancelar", "Cerrar": "Fechar", "Computación": "Informática", "Telefonía corporativa": "Telefonia corporativa", "Sin equipos asignados — usá el botón + para agregar": "Sem equipamentos atribuídos — use o botão + para adicionar", "Sin teléfonos asignados — usá el botón + para agregar": "Sem telefones atribuídos — use o botão + para adicionar", "Cálculo automático LCT · Registro de períodos · Gantt de planificación": "Cálculo automático LCT · Registro de períodos · Gantt de planejamento", "Escala LCT Art. 150": "Escala LCT Art. 150", "Escala": "Escala", "Días LCT / Usados": "Dias LCT / Usados", "Días LCT": "Dias LCT", "Período 1 — Salida / Retorno": "Período 1 — Saída / Retorno", "Período 2 — Salida / Retorno": "Período 2 — Saída / Retorno", "Período 3 — Salida / Retorno": "Período 3 — Saída / Retorno", "Sal": "Saída", "Ret": "Ret.", "Salida": "Saída", "Retorno": "Retorno", "Períodos de vacaciones": "Períodos de férias", "Menos de 1 año": "Menos de 1 ano", "1 a 5 años": "1 a 5 anos", "5 a 10 años": "5 a 10 anos", "10 a 20 años": "10 a 20 anos", "Más de 20 años": "Mais de 20 anos", "<1 año": "<1 ano", "1–5 años": "1–5 anos", "5–10 años": "5–10 anos", "10–20 años": "10–20 anos", ">20 años": ">20 anos", "5 (cinco) días hábiles": "5 (cinco) dias úteis", "Visualización de períodos planificados por empleado": "Visualização dos períodos planejados por funcionário", "Gantt de Vacaciones": "Gantt de férias", "Empleado": "Funcionário", "Ene": "Jan", "Feb": "Fev", "Mar": "Mar", "Abr": "Abr", "May": "Mai", "Jun": "Jun", "Jul": "Jul", "Ago": "Ago", "Sep": "Set", "Oct": "Out", "Nov": "Nov", "Dic": "Dez", "Referencias": "Legenda", "Referencia": "Legenda", "Período 1": "Período 1", "Período 2": "Período 2", "Período 3": "Período 3", "Hoy": "Hoje", "pasado": "passado", "Período ya concluido": "Período já concluído", "Sin períodos cargados": "Sem períodos cadastrados", "Entrega de Indumentaria / EPP": "Entrega de uniformes / EPI", "Acta de entrega de ropa de trabajo y elementos de protección personal": "Ata de entrega de roupas de trabalho e equipamentos de proteção individual", "Acta de entrega de equipos informáticos y telefonía corporativa": "Ata de entrega de equipamentos de informática e telefonia corporativa", "ACTA DE ENTREGA DE INDUMENTARIA Y EPP": "ATA DE ENTREGA DE UNIFORMES E EPI", "ACTA DE ENTREGA — EQUIPOS IT": "ATA DE ENTREGA — EQUIPAMENTOS DE TI", "DATOS DEL EMPLEADO": "DADOS DO FUNCIONÁRIO", "DETALLE DE ELEMENTOS ENTREGADOS": "DETALHE DOS ITENS ENTREGUES", "COMPUTACIÓN": "INFORMÁTICA", "TELEFONÍA": "TELEFONIA", "Artículo": "Artigo", "Artículo / Descripción": "Artigo / Descrição", "Talle / Color": "Tamanho / Cor", "Cant.": "Qtd.", "F. Entrega": "Data de entrega", "Tipo": "Tipo", "Marca": "Marca", "Modelo": "Modelo", "N° de Serie": "N° de série", "Notebook / Equipo": "Notebook / Equipamento", "Teléfono": "Telefone", "Empresa": "Empresa", "N°": "N°", "Agregar": "Adicionar", "+ Agregar": "+ Adicionar", "Limpiar": "Limpar", "Limpiar filas": "Limpar linhas", "Imprimir / PDF": "Imprimir / PDF", "Observaciones": "Observações", "IMPORTANTE": "IMPORTANTE", "Declaro haber recibido los elementos detallados en las condiciones indicadas, comprometiéndome a su correcto uso y conservación conforme las normas de seguridad e higiene vigentes.": "Declaro ter recebido os itens detalhados nas condições indicadas, comprometendo-me com seu uso correto e conservação conforme as normas de segurança e higiene vigentes.", "El equipo entregado es propiedad de la empresa y deberá ser utilizado exclusivamente para fines laborales. Queda expresamente prohibido su uso para fines personales ajenos a la actividad de la empresa.": "O equipamento entregue é propriedade da empresa e deverá ser utilizado exclusivamente para fins de trabalho. Fica expressamente proibido seu uso para fins pessoais alheios à atividade da empresa.", "Firma y aclaración del empleado": "Assinatura e nome do funcionário", "Firma y aclaración del empleado / N° DNI": "Assinatura e nome do funcionário / N° documento", "Firma, sello y fecha — Responsable RRHH": "Assinatura, carimbo e data — Responsável RH", "Responsable RRHH": "Responsável RH", "Responsable IT / RRHH": "Responsável TI / RH", "Sello y firma empresa": "Carimbo e assinatura da empresa", "— Seleccionar empleado —": "— Selecionar funcionário —", "Declaración Jurada de Domicilio": "Declaração juramentada de endereço", "DECLARACIÓN JURADA DE DOMICILIO": "DECLARAÇÃO JURAMENTADA DE ENDEREÇO", "Formulario oficial de declaración de domicilio del personal": "Formulário oficial de declaração de endereço do pessoal", "DATOS DE DOMICILIO DECLARADO": "DADOS DO ENDEREÇO DECLARADO", "Calle y número": "Rua e número", "Piso / Dpto / Lote": "Andar / Apto / Lote", "Barrio / Localidad": "Bairro / Localidade", "Partido / Municipio": "Município", "Código Postal": "CEP", "Teléfono contacto": "Telefone de contato", "E-mail personal": "E-mail pessoal", "CALLES DE REFERENCIA — UBICACIÓN DEL DOMICILIO": "RUAS DE REFERÊNCIA — LOCALIZAÇÃO DO ENDEREÇO", "Nombre de calle": "Nome da rua", "Altura": "Número", "Ver mapa interactivo": "Ver mapa interativo", "Por medio de la presente, el/la suscripto/a declara bajo juramento que los datos consignados a continuación son exactos y verídicos, comprometiéndose a comunicar en forma fehaciente cualquier modificación dentro de los": "Pela presente, o/a abaixo-assinado/a declara sob juramento que os dados consignados a seguir são exatos e verídicos, comprometendo-se a comunicar formalmente qualquer alteração dentro de", "de producido el cambio, para su actualización en el legajo personal.": "após a alteração, para atualização do prontuário pessoal.", "El/la declarante presta conformidad para que los datos denunciados sean utilizados en los procesos de nómina y para todo trámite administrativo necesario, conforme la normativa vigente en materia de protección de datos personales (Ley 25.326).": "O/a declarante concorda que os dados informados sejam utilizados nos processos de folha e em todo trâmite administrativo necessário, conforme a legislação vigente de proteção de dados pessoais (Lei 25.326).", "Grilla de Actividades por Puesto": "Grade de atividades por cargo", "Agregá, renombrá o eliminá las actividades de cada puesto — base para evaluación y sustitución": "Adicione, renomeie ou exclua as atividades de cada cargo — base para avaliação e substituição", "Buscar actividad o puesto...": "Buscar atividade ou cargo...", "Expandir / Colapsar todo": "Expandir / Recolher tudo", "Actividad": "Atividade", "Actividades": "Atividades", "Eliminar actividad": "Excluir atividade", "Cambiar nombre": "Renomear", "Nombre de la actividad...": "Nome da atividade...", "Planta de la actividad": "Planta da atividade", "— Planta (opcional) —": "— Planta (opcional) —", "— Puesto relacionado —": "— Cargo relacionado —", "(sin actividades)": "(sem atividades)", "Este puesto todavía no tiene actividades. Agregá la primera abajo.": "Este cargo ainda não tem atividades. Adicione a primeira abaixo.", "Evaluá el nivel de dominio de cada empleado por actividad": "Avalie o nível de domínio de cada funcionário por atividade", "Planilla de Evaluación de Competencias": "Planilha de avaliação de competências", "Completá el nivel de dominio para cada actividad. Los cambios se reflejan automáticamente en la Matriz de Sustitución.": "Preencha o nível de domínio de cada atividade. As alterações aparecem automaticamente na Matriz de substituição.", "Todas las actividades": "Todas as atividades", "Guardar evaluación": "Salvar avaliação", "Seleccioná un empleado para evaluar": "Selecione um funcionário para avaliar", "Sin conocimiento": "Sem conhecimento", "En formación": "Em formação", "Básico": "Básico", "Autónomo": "Autônomo", "Experto": "Especialista", "Experto / Puede enseñar": "Especialista / Pode ensinar", "Matriz de Sustitución": "Matriz de substituição", "Nivel de dominio de cada empleado por actividad — generada desde las evaluaciones": "Nível de domínio de cada funcionário por atividade — gerada a partir das avaliações", "Exportar CSV": "Exportar CSV", "Puesto · Planta": "Cargo · Planta", "Total": "Total", "promedio": "média", "Tablas del Sistema": "Tabelas do sistema", "Administrá los valores de plantas, sectores, puestos y actividades": "Gerencie os valores de plantas, setores, cargos e atividades", "Sectores": "Setores", "Puestos": "Cargos", "Nueva planta...": "Nova planta...", "Nuevo sector...": "Novo setor...", "Nuevo puesto...": "Novo cargo...", "Gestión de Usuarios": "Gestão de usuários", "Administración de accesos al sistema": "Administração de acessos ao sistema", "Nuevo usuario": "Novo usuário", "Usuario *": "Usuário *", "Contraseña *": "Senha *", "ej: jperez": "ex.: jsilva", "mínimo 8 caracteres": "mínimo 8 caracteres", "Rol": "Função", "Plantas que puede ver": "Plantas que pode ver", "Los administradores ven todas las plantas.": "Os administradores veem todas as plantas.", "Sin plantas marcadas, ve todas las plantas.": "Sem plantas marcadas, vê todas as plantas.", "Solo va a ver y modificar personal de las plantas marcadas.": "Só verá e modificará pessoal das plantas marcadas.", "Ingresó": "Último acesso", "Datos y seguridad": "Dados e segurança", "Los datos se guardan en una base de datos en la nube. Cada día se guarda una copia automática.": "Os dados são salvos em um banco de dados na nuvem. Uma cópia automática é salva todos os dias.", "Descargar backup (.json)": "Baixar backup (.json)", "Restaurar desde un backup (.json)": "Restaurar a partir de um backup (.json)", "Reemplaza todos los datos por los del archivo. Antes se guarda una copia automática de la base actual. Los usuarios no se modifican.": "Substitui todos os dados pelos do arquivo. Antes é salva uma cópia automática da base atual. Os usuários não são alterados.", "Copias automáticas": "Cópias automáticas", "Se guardan una por día y antes de cada restauración (las últimas 30).": "É salva uma por dia e antes de cada restauração (as últimas 30).", "Todavía no hay copias. Se crea la primera al guardar cambios.": "Ainda não há cópias. A primeira é criada ao salvar alterações.", "Cambiar mi contraseña": "Alterar minha senha", "Contraseña actual": "Senha atual", "Contraseña nueva": "Nova senha", "Repetir nueva": "Repetir nova senha", "Historial de actividad": "Histórico de atividade", "Guardó datos": "Salvou dados", "Creó usuario": "Criou usuário", "Elegir archivo…": "Escolher arquivo…", "Guía de diseño LOGITEX: colores oficiales, menú con logo y versión, buscador y KPIs en el encabezado, idiomas español, inglés y portugués, rol Consulta (solo lectura).": "Guia de design LOGITEX: cores oficiais, menu com logo e versão, busca e KPIs no cabeçalho, idiomas espanhol, inglês e português, função Consulta (somente leitura).", "Encabezados de columnas (Gantt, Matriz, actas) siguen el modo claro u oscuro.": "Cabeçalhos de colunas (Gantt, Matriz, atas) seguem o modo claro ou escuro.", "Edición simultánea: varios usuarios pueden guardar a la vez. Menú y encabezado siguen el tema.": "Edição simultânea: vários usuários podem salvar ao mesmo tempo. Menu e cabeçalho seguem o tema.", "Paleta de colores oficial. Aviso de cumpleaños visible para todos los usuarios.": "Paleta de cores oficial. Aviso de aniversários visível para todos os usuários.", "Datos familiares (contacto, estado civil, hijos) y motivo de la baja.": "Dados familiares (contato, estado civil, filhos) e motivo do desligamento.", "Plantas por usuario: el operador solo ve y modifica sus plantas.": "Plantas por usuário: o operador só vê e modifica suas plantas.", "Versión web en Vercel con base de datos: imagen en el ingreso, ver contraseña, actividades por puesto, corrección de la edad en cumpleaños.": "Versão web na Vercel com banco de dados: imagem no login, ver senha, atividades por cargo, correção da idade nos aniversários.", "Cantidad de hijos: ingresá un número entero entre 0 y 30.": "Número de filhos: informe um número inteiro entre 0 e 30.", "Completá la contraseña actual y la nueva.": "Preencha a senha atual e a nova.", "El archivo no tiene una lista de empleados.": "O arquivo não tem uma lista de funcionários.", "Ese puesto ya tiene una actividad con ese nombre.": "Esse cargo já tem uma atividade com esse nome.", "Generá la matriz primero": "Gere a matriz primeiro", "Ingresá al menos la calle para buscar en el mapa.": "Informe pelo menos a rua para buscar no mapa.", "Ingresá el nombre de la actividad.": "Informe o nome da atividade.", "La contraseña es obligatoria para un usuario nuevo": "A senha é obrigatória para um novo usuário", "La contraseña nueva debe tener al menos 8 caracteres.": "A nova senha deve ter pelo menos 8 caracteres.", "Las contraseñas nuevas no coinciden.": "As novas senhas não coincidem.", "No podés eliminar tu propio usuario": "Você não pode excluir seu próprio usuário", "Nombre y Legajo son obligatorios": "Nome e matrícula são obrigatórios", "Seleccioná un empleado": "Selecione um funcionário", "Solo un administrador puede restaurar datos.": "Somente um administrador pode restaurar dados.", "Usuario y nombre son obligatorios": "Usuário e nome são obrigatórios", "Ya existe ese valor.": "Esse valor já existe.", "Ya existe un empleado con ese legajo": "Já existe um funcionário com essa matrícula", "✅ Contraseña actualizada.": "✅ Senha atualizada.", "Hay cambios que no se pudieron guardar. ¿Salir igual?": "Há alterações que não puderam ser salvas. Sair mesmo assim?", "Limpiar todas las evaluaciones de este empleado?": "Limpar todas as avaliações deste funcionário?", "Otro usuario eliminó un empleado que estabas editando": "Outro usuário excluiu um funcionário que você estava editando", "Tu usuario es de consulta: puede ver, filtrar y ordenar, pero no modificar datos.": "Seu usuário é de consulta: pode ver, filtrar e ordenar, mas não modificar dados."};
+I18N_PATRONES=[
+[/^(\d+) de (\d+) empleados$/,{en:"$1 of $2 employees",pt:"$1 de $2 funcionários"}],
+[/^(\d+) empleados activos$/,{en:"$1 active employees",pt:"$1 funcionários ativos"}],
+[/^\((\d+) actividad · (\d+) empleado\)$/,{en:"($1 activity · $2 employee)",pt:"($1 atividade · $2 funcionário)"}],
+[/^\((\d+) actividad · (\d+) empleados\)$/,{en:"($1 activity · $2 employees)",pt:"($1 atividade · $2 funcionários)"}],
+[/^\((\d+) actividades · (\d+) empleado\)$/,{en:"($1 activities · $2 employee)",pt:"($1 atividades · $2 funcionário)"}],
+[/^\((\d+) actividades · (\d+) empleados\)$/,{en:"($1 activities · $2 employees)",pt:"($1 atividades · $2 funcionários)"}],
+[/^En 1 día\s+·\s+(\d+) años\s+·\s+(.+)$/,{en:"In 1 day  ·  $1 years old  ·  $2",pt:"Em 1 dia  ·  $1 anos  ·  $2"}],
+[/^En (\d+) días\s+·\s+(\d+) años\s+·\s+(.+)$/,{en:"In $1 days  ·  $2 years old  ·  $3",pt:"Em $1 dias  ·  $2 anos  ·  $3"}],
+[/^¡HOY cumple años!\s+·\s+(\d+) años\s+·\s+(.+)$/,{en:"Birthday TODAY!  ·  $1 years old  ·  $2",pt:"Aniversário HOJE!  ·  $1 anos  ·  $2"}],
+[/^(⏱ )?(\d+) años (\d+)m$/,{en:"$1$2 yrs $3m",pt:"$1$2 anos $3m"}],
+[/^(⏱ )?(\d+) año (\d+)m$/,{en:"$1$2 yr $3m",pt:"$1$2 ano $3m"}],
+[/^(⏱ )?(\d+)m$/,{en:"$1$2m",pt:"$1$2m"}],
+[/^(\d+) años$/,{en:"$1 years",pt:"$1 anos"}],
+[/^(\d+) días$/,{en:"$1 days",pt:"$1 dias"}],
+[/^(\d+) días \((\d+)–(\d+) años\)$/,{en:"$1 days ($2–$3 years)",pt:"$1 dias ($2–$3 anos)"}],
+[/^(\d+) días \(\+(\d+) años\)$/,{en:"$1 days (+$2 years)",pt:"$1 dias (+$2 anos)"}],
+[/^🏖 (\d+) días vac\.$/,{en:"🏖 $1 vacation days",pt:"🏖 $1 dias de férias"}],
+[/^🏖 Vacaciones$/,{en:"🏖 Vacations",pt:"🏖 Férias"}],
+[/^de (\d+) días LCT$/,{en:"of $1 LCT days",pt:"de $1 dias LCT"}],
+[/^Desde (\d\d\/\d\d\/\d{4})$/,{en:"Since $1",pt:"Desde $1"}],
+[/^P(\d): (\S+) → (\S+) \((\d+) días\)$/,{en:"P$1: $2 → $3 ($4 days)",pt:"P$1: $2 → $3 ($4 dias)"}],
+[/^Guardado (\d\d:\d\d(?::\d\d)?)$/,{en:"Saved $1",pt:"Salvo $1"}],
+[/^Nueva actividad para (.+)$/,{en:"New activity for $1",pt:"Nova atividade para $1"}],
+[/^Cambiar nombre de (.+)$/,{en:"Rename $1",pt:"Renomear $1"}],
+[/^Eliminar (.+)$/,{en:"Delete $1",pt:"Excluir $1"}],
+[/^Fecha: (.+)$/,{en:"Date: $1",pt:"Data: $1"}],
+[/^¿Eliminar a (.+)\?$/,{en:"Delete $1?",pt:"Excluir $1?"}],
+[/^¿Eliminar usuario @(.+)\?$/,{en:"Delete user @$1?",pt:"Excluir usuário @$1?"}],
+[/^No se pudo (?:importar|imprimir): (.+)$/,{en:"Could not complete the action: $1",pt:"Não foi possível concluir a ação: $1"}],
+[/^Último guardado: (.+)$/,{en:"Last saved: $1",pt:"Último salvamento: $1"}]
+];
+function _tr(t){
+  if(idioma==='es'||!t)return t;
+  var core=t.trim();if(!core||core.length>400)return t;
+  var d=I18N[idioma],r=d[core];
+  if(r===undefined){
+    // "Texto:" -> traduce "Texto" y conserva los dos puntos
+    var m=core.match(/^(.*?)(\s*[:*])$/);
+    if(m&&d[m[1]]!==undefined)r=d[m[1]]+m[2];
+  }
+  if(r===undefined){
+    var em=core.match(/^([^0-9A-Za-zÀ-ÿ¡¿(<>@—\-+]{1,3}\s+)(.+)$/);
+    if(em&&d[em[2]]!==undefined)r=em[1]+d[em[2]];
+  }
+  if(r===undefined){
+    for(var i=0;i<I18N_PATRONES.length;i++){
+      var pt=I18N_PATRONES[i];
+      if(pt[0].test(core)){r=core.replace(pt[0],pt[1][idioma]);break;}
+    }
+  }
+  if(r===undefined){
+    // separadores alrededor del texto ("| Básico |", "Escala:")
+    var sp=core.match(/^([|·\u00a0\s]*)(.+?)([|·:\u00a0\s]*)$/);
+    if(sp&&(sp[1]||sp[3])&&d[sp[2]]!==undefined)r=sp[1]+d[sp[2]]+sp[3];
+  }
+  if(/\d{1,2} de [a-z]+ de \d{4}/.test(r===undefined?core:r))r=_trFechas(r===undefined?core:r);
+  if(r===undefined)return t;
+  var a=t.match(/^\s*/)[0],z=t.match(/\s*$/)[0];
+  return a+r+z;
+}
+var MESES_ES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+var MESES={en:['January','February','March','April','May','June','July','August','September','October','November','December'],
+  pt:['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']};
+// "16 de noviembre de 2026" -> "November 16, 2026" / "16 de novembro de 2026"
+function _trFechas(s){
+  return s.replace(/(\d{1,2}) de ([a-z]+) de (\d{4})/g,function(m,d,mes,a){
+    var i=MESES_ES.indexOf(mes);if(i<0||idioma==='es')return m;
+    return idioma==='en'?MESES.en[i]+' '+d+', '+a:d+' de '+MESES.pt[i]+' de '+a;
+  });
+}
+// Ayuda para textos armados en JavaScript: tx('Hola {n}',{n:'Ana'})
+function tx(texto,vars){
+  var s=_tr(texto);
+  if(vars)s=s.replace(/\{(\w+)\}/g,function(m,k){return vars[k]!==undefined?vars[k]:m;});
+  return s;
+}
+var _origTxt=new WeakMap(),_origAttr=new WeakMap(),I18N_ATTRS=['placeholder','title','aria-label'];
+function _saltar(el){return !el||!!el.closest('[data-noi18n],script,style,textarea,.leaflet-container');}
+function _traducirTexto(n){
+  if(_saltar(n.parentElement))return;
+  var reg=_origTxt.get(n),act=n.data;
+  if(!reg||act!==reg.puesto)reg={es:act};
+  var nuevo=_tr(reg.es);reg.puesto=nuevo;_origTxt.set(n,reg);
+  if(nuevo!==act)n.data=nuevo;
+}
+function _traducirAttr(el,at){
+  if(!el.hasAttribute||!el.hasAttribute(at)||_saltar(el))return;
+  var regs=_origAttr.get(el)||{},reg=regs[at],act=el.getAttribute(at);
+  if(!reg||act!==reg.puesto)reg={es:act};
+  var nuevo=_tr(reg.es);reg.puesto=nuevo;regs[at]=reg;_origAttr.set(el,regs);
+  if(nuevo!==act)el.setAttribute(at,nuevo);
+}
+function traducirArbol(raiz){
+  if(!raiz)return;
+  if(raiz.nodeType===3){_traducirTexto(raiz);return;}
+  if(raiz.nodeType!==1)return;
+  var w=document.createTreeWalker(raiz,NodeFilter.SHOW_TEXT,null),n;
+  while((n=w.nextNode()))_traducirTexto(n);
+  var els=[raiz].concat(Array.prototype.slice.call(raiz.querySelectorAll('[placeholder],[title],[aria-label]')));
+  els.forEach(function(el){I18N_ATTRS.forEach(function(at){_traducirAttr(el,at);});});
+}
+var _obsI18n=new MutationObserver(function(muts){
+  muts.forEach(function(m){
+    if(m.type==='childList'){
+      m.addedNodes.forEach(function(n){
+        if(idioma!=='es'||_origTxt.has(n))traducirArbol(n);
+        if(n.nodeType===1&&typeof aplicarSoloLectura==='function')aplicarSoloLectura(n);
+      });
+    }else if(m.type==='characterData'){if(idioma!=='es'||_origTxt.has(m.target))_traducirTexto(m.target);}
+    else if(m.type==='attributes'){if(idioma!=='es'||_origAttr.has(m.target))_traducirAttr(m.target,m.attributeName);}
+  });
+});
+function iniciarIdiomas(){
+  _obsI18n.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:I18N_ATTRS});
+  pintarMenuIdioma();
+  if(idioma!=='es')cambiarIdioma(idioma,true);
+}
+function cambiarIdioma(cod,inicial){
+  if(!IDIOMAS[cod])return;
+  idioma=cod;
+  try{localStorage.setItem('rrhh_lang',cod);}catch(e){}
+  document.documentElement.lang=IDIOMAS[cod].locale;
+  traducirArbol(document.body);
+  traducirArbol(document.querySelector('title'));
+  pintarMenuIdioma();
+  var l=document.getElementById('lang-list');if(l)l.classList.remove('open');
+}
+function pintarMenuIdioma(){
+  var a=document.getElementById('lang-actual'),l=document.getElementById('lang-list');
+  if(!a||!l)return;
+  a.innerHTML=BANDERAS[idioma]+'<b>'+IDIOMAS[idioma].code+'</b>';
+  l.innerHTML=['es','en','pt'].map(function(c){
+    return '<button type="button" class="lang-opt'+(c===idioma?' sel':'')+'" onclick="cambiarIdioma(\''+c+'\')">'+BANDERAS[c]+'<span>'+IDIOMAS[c].nombre+'</span><b style="margin-left:auto">'+IDIOMAS[c].code+'</b></button>';
+  }).join('');
+}
+function toggleMenuIdioma(e){e.stopPropagation();document.getElementById('lang-list').classList.toggle('open');}
+// Mensajes de alerta y confirmación en el idioma elegido
+(function(){
+  var _a=window.alert.bind(window),_c=window.confirm.bind(window);
+  window.alert=function(m){return _a(_trMensaje(String(m)));};
+  window.confirm=function(m){return _c(_trMensaje(String(m)));};
+})();
+function _trMensaje(m){
+  if(idioma==='es')return m;
+  return m.split('\n').map(function(l){return _tr(l);}).join('\n');
+}
+// ════════════════════════════════════════════════════════════════
+// GUÍA LOGITEX: versión, buscador, KPIs, idiomas y rol Consulta
+// ════════════════════════════════════════════════════════════════
+var APP_VERSION_UI='v16';
+var HISTORIAL_VERSIONES=[
+  {v:'v16',f:'16/11/2026',d:'Guía de diseño LOGITEX: colores oficiales, menú con logo y versión, buscador y KPIs en el encabezado, idiomas español, inglés y portugués, rol Consulta (solo lectura).'},
+  {v:'v15.4',f:'16/11/2026',d:'Encabezados de columnas (Gantt, Matriz, actas) siguen el modo claro u oscuro.'},
+  {v:'v15.3',f:'13/11/2026',d:'Edición simultánea: varios usuarios pueden guardar a la vez. Menú y encabezado siguen el tema.'},
+  {v:'v15.2',f:'05/11/2026',d:'Paleta de colores oficial. Aviso de cumpleaños visible para todos los usuarios.'},
+  {v:'v15.1',f:'03/11/2026',d:'Datos familiares (contacto, estado civil, hijos) y motivo de la baja.'},
+  {v:'v14',f:'27/10/2026',d:'Plantas por usuario: el operador solo ve y modifica sus plantas.'},
+  {v:'v13',f:'26/10/2026',d:'Versión web en Vercel con base de datos: imagen en el ingreso, ver contraseña, actividades por puesto, corrección de la edad en cumpleaños.'}
+];
+function abrirHistorial(){
+  var m=document.getElementById('m-historial-ver');
+  if(!m){
+    m=document.createElement('div');m.className='modal-overlay';m.id='m-historial-ver';
+    m.innerHTML='<div class="modal" style="max-width:560px"><button class="modal-close" onclick="cm(\'m-historial-ver\')" aria-label="Cerrar">&times;</button>'+
+      '<h2>Historial de versiones</h2><div id="historial-ver-body"></div></div>';
+    m.addEventListener('click',function(e){if(e.target===m)cm('m-historial-ver');});
+    document.body.appendChild(m);
+  }
+  document.getElementById('historial-ver-body').innerHTML=HISTORIAL_VERSIONES.map(function(x){
+    return '<div class="hv-item"><div class="hv-cab"><span class="badge badge-blue" data-noi18n>'+x.v+'</span><span class="hv-f" data-noi18n>'+x.f+'</span></div><div class="hv-d">'+x.d+'</div></div>';
+  }).join('');
+  om('m-historial-ver');
+}
+
+// ── Buscador del encabezado ──
+var _busqSel=-1,_busqRes=[];
+function buscarGlobal(t){
+  var box=document.getElementById('busqueda-resultados');
+  t=(t||'').trim();
+  if(!t){box.classList.remove('open');box.innerHTML='';_busqRes=[];return;}
+  var n=_normPlanta(t);
+  _busqRes=empleados.filter(function(e){
+    return _normPlanta([e.nombre,e.legajo,e.dni,e.puesto,e.planta].join(' ')).indexOf(n)>=0;
+  }).slice(0,8);
+  _busqSel=_busqRes.length?0:-1;
+  if(!_busqRes.length){box.innerHTML='<div class="sr-vacio">Sin resultados</div>';box.classList.add('open');return;}
+  box.innerHTML=_busqRes.map(function(e,i){
+    return '<div class="sr-item'+(i===0?' sel':'')+'" role="option" onmousedown="elegirBusqueda('+i+')">'+fotoOIniciales(e)+
+      '<div><div class="sr-n" data-noi18n>'+escBday(e.nombre||'')+'</div><div class="sr-d"><span data-noi18n>'+escBday((e.legajo||'')+' · '+(e.puesto||'')+' · '+(e.planta||''))+'</span>'+
+      (e.activo==='0'?' · <span class="badge badge-no">Inactivo</span>':'')+'</div></div></div>';
+  }).join('');
+  box.classList.add('open');
+}
+function fotoOIniciales(e){
+  return '<div class="mini-foto" style="background:'+colorFor(e.nombre||'')+';color:#fff;font-size:11px;font-weight:700;width:30px;height:30px" data-noi18n>'+initials(e.nombre||'')+'</div>';
+}
+function elegirBusqueda(i){
+  var e=_busqRes[i];if(!e)return;
+  var inp=document.getElementById('busqueda-global');inp.value='';buscarGlobal('');inp.blur();
+  showPage('personal');
+  editarEmp(e.id);
+}
+function teclaBusquedaGlobal(ev){
+  var box=document.getElementById('busqueda-resultados');
+  if(ev.key==='Escape'){ev.target.value='';buscarGlobal('');ev.target.blur();return;}
+  if(!_busqRes.length)return;
+  if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){
+    ev.preventDefault();
+    _busqSel=(_busqSel+(ev.key==='ArrowDown'?1:-1)+_busqRes.length)%_busqRes.length;
+    box.querySelectorAll('.sr-item').forEach(function(x,i){x.classList.toggle('sel',i===_busqSel);});
+  }else if(ev.key==='Enter'){ev.preventDefault();elegirBusqueda(_busqSel<0?0:_busqSel);}
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.header-search')){var b=document.getElementById('busqueda-resultados');if(b)b.classList.remove('open');}
+  if(!e.target.closest('.lang-menu')){var l=document.getElementById('lang-list');if(l)l.classList.remove('open');}
+});
+
+// ── KPIs compactos del encabezado ──
+function enVacacionesHoy(id){
+  var v=vacPeriodos[id];if(!v)return false;
+  var hoy=new Date().toISOString().slice(0,10);
+  for(var i=1;i<=3;i++){if(v['sal'+i]&&v['ret'+i]&&v['sal'+i]<=hoy&&hoy<v['ret'+i])return true;}
+  return false;
+}
+function actualizarKpisMini(){
+  var el=document.getElementById('kpis-mini');if(!el||!currentUser)return;
+  var act=empleados.filter(function(e){return e.activo!=='0';});
+  var vac=act.filter(function(e){return enVacacionesHoy(e.id);}).length;
+  var plantas={};act.forEach(function(e){if(e.planta)plantas[e.planta]=1;});
+  var html='<div class="kpi-mini k-ok" title="Empleados activos"><b>'+act.length+'</b><span>Activos</span></div>'+
+    '<div class="kpi-mini k-proc" title="De vacaciones hoy"><b>'+vac+'</b><span>Vacaciones</span></div>'+
+    '<div class="kpi-mini" title="Plantas con personal activo"><b>'+Object.keys(plantas).length+'</b><span>Plantas</span></div>';
+  if(el._ultimo!==html){el.innerHTML=html;el._ultimo=html;}
+}
+setInterval(actualizarKpisMini,2000);
+
+// ── Rol Consulta: ve, filtra y ordena; no edita ──
+function esConsulta(){return !!(currentUser&&currentUser.rol==='consulta');}
+function nombreRol(r){return r==='admin'?'Administrador':r==='consulta'?'Consulta':'Operador';}
+var RE_EDITA=/guardar|eliminar|borrar|agregar|abrirNuevo|importar|restaurar|quitar|subirFoto|cargarFoto|tomarFoto|renombrar|limpiar|nuevaAct|addAct|delAct|editarAct|setNivel|selNivel|aplicarInventario|agregarItem|eliminarItem|marcarTodos/i;
+var RE_FILTRO=/render|filtr|buscar|ordenar|sort|cargarEval|cambiarAnio|toggleCat|mostrar|selEmp|seleccionar|actualizarPlantas/i;
+function aplicarSoloLectura(raiz){
+  if(!esConsulta()||!raiz||!raiz.querySelectorAll)return;
+  var lista=[raiz].concat(Array.prototype.slice.call(raiz.querySelectorAll('button,[onclick],input,select,textarea')));
+  lista.forEach(function(el){
+    if(!el.tagName||el.closest('#topheader,.sidebar,.login-screen,#m-datos,#m-historial-ver'))return;
+    var acc=(el.getAttribute('onclick')||'')+' '+(el.getAttribute('onchange')||'')+' '+(el.getAttribute('oninput')||'');
+    if(el.tagName==='BUTTON'||el.hasAttribute('onclick')){
+      if(RE_EDITA.test(acc))el.classList.add('ro-oculto');
+    }else if(/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)){
+      if(el.type==='search'||el.closest('.filters')||RE_FILTRO.test(acc)&&!RE_EDITA.test(acc))return;
+      el.disabled=true;
+    }
+  });
+}
 function entrarAlSistema(usr){
   currentUser=usr;
   document.getElementById('login-screen').style.display='none';
   document.getElementById('main-nav').style.display='flex';
   document.getElementById('main-content').style.display='block';
   document.getElementById('nav-username').textContent=usr.nombre;
-  document.getElementById('nav-rol').textContent=(usr.rol==='admin'?'Administrador':'Operador')+(esRestringido()?' · '+usr.plantas.join(', '):'');
+  document.getElementById('nav-rol').textContent=nombreRol(usr.rol)+(esRestringido()?' · '+usr.plantas.join(', '):'');
+  document.body.classList.toggle('ro',usr.rol==='consulta');
+  pintarBotonTema();
   document.body.classList.toggle('restringido',esRestringido());
   document.getElementById('nav-initials').textContent=initials(usr.nombre);
   buildNav();
@@ -1400,9 +1746,11 @@ function entrarAlSistema(usr){
   var mods=modulosVisibles();
   if(mods.length>0)showPage(mods[0].key);
   showBirthdayPanel();
+  actualizarKpisMini();
+  aplicarSoloLectura(document.body);
   if(window._autoSaveInterval) clearInterval(window._autoSaveInterval);
   window._autoSaveInterval=setInterval(function(){
-    if(hayCambiosSinGuardar())guardarDB(); else comprobarCambiosRemotos();
+    if(hayCambiosSinGuardar()&&!esConsulta())guardarDB(); else comprobarCambiosRemotos();
   },15*1000);
 }
 function doLogout(){
@@ -1462,9 +1810,19 @@ function showPage(name){
   if(renders[name])renders[name]();
   window.scrollTo(0,0);
 }
+function temaActual(){return document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';}
+function pintarBotonTema(){
+  var oscuro=temaActual()==='dark';
+  document.querySelectorAll('.theme-toggle').forEach(function(b){
+    b.innerHTML=oscuro?'<i class="fa-solid fa-sun"></i>':'<i class="fa-solid fa-moon"></i>';
+    b.title=oscuro?'Pasar a modo claro':'Pasar a modo oscuro';
+  });
+}
 function toggleTheme(){
-  document.body.classList.toggle('dark');
-  document.querySelector('.theme-toggle').innerHTML=document.body.classList.contains('dark')?'<i class="fa-solid fa-sun"></i>':'<i class="fa-solid fa-moon"></i>';
+  var t=temaActual()==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  try{localStorage.setItem('rrhh_theme',t);}catch(e){}
+  pintarBotonTema();
 }
 
 
@@ -1537,15 +1895,15 @@ function renderTablaItems(nombre){
   var tbody=document.getElementById('tb-'+nombre);if(!tbody)return;
   tbody.innerHTML='';
   if(!data.length){
-    tbody.innerHTML='<tr><td colspan="3" class="empty-state" style="padding:20px;text-align:center;color:#94A3B8">Sin datos</td></tr>';
+    tbody.innerHTML='<tr><td colspan="3" class="empty-state" style="padding:20px;text-align:center;color:var(--text-2)">Sin datos</td></tr>';
     return;
   }
   data.forEach(function(item,idx){
     var tr=document.createElement('tr');
-    var c1=document.createElement('td');c1.style.cssText='text-align:center;color:#64748B;width:44px;padding:8px 12px';c1.textContent=idx+1;
+    var c1=document.createElement('td');c1.style.cssText='text-align:center;color:var(--text-2);width:44px;padding:8px 12px';c1.textContent=idx+1;
     var c2=document.createElement('td');c2.style.padding='6px 12px';
     var inp=document.createElement('input');inp.className='tabla-input';inp.value=item.valor;
-    inp.addEventListener('focus',function(){this.style.background='#EEF2FF';this.style.border='1px solid #A5B4FC';});
+    inp.addEventListener('focus',function(){this.style.background='var(--primary-light)';this.style.border='1px solid var(--primary-2)';});
     inp.addEventListener('blur',(function(n,id){return function(){this.style.background='transparent';this.style.border='none';updateTablaItem(n,id,this.value);};})(nombre,item.id));
     c2.appendChild(inp);
     var c3=document.createElement('td');c3.style.cssText='text-align:center;padding:4px 8px';
@@ -1618,16 +1976,16 @@ function renderActividadesTabla(){
   var tbody=document.getElementById('tb-actividades');if(!tbody)return;
   tbody.innerHTML='';
   if(!tabActividades.length){
-    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:#94A3B8">Sin actividades</td></tr>';return;
+    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-2)">Sin actividades</td></tr>';return;
   }
   tabActividades.forEach(function(act,idx){
     var puesto=tabPuestos.find(function(p){return p.id===act.puestoId;})||{valor:'—'};
     var planta=tabPlantas.find(function(p){return p.id===act.plantaId;})||{valor:'Todas'};
     var tr=document.createElement('tr');
-    var a1=document.createElement('td');a1.style.cssText='text-align:center;color:#64748B;padding:8px 12px';a1.textContent=idx+1;
+    var a1=document.createElement('td');a1.style.cssText='text-align:center;color:var(--text-2);padding:8px 12px';a1.textContent=idx+1;
     var a2=document.createElement('td');a2.style.padding='6px 12px';
     var ainp=document.createElement('input');ainp.className='tabla-input';ainp.value=act.nombre;
-    ainp.addEventListener('focus',function(){this.style.background='#EEF2FF';this.style.border='1px solid #A5B4FC';});
+    ainp.addEventListener('focus',function(){this.style.background='var(--primary-light)';this.style.border='1px solid var(--primary-2)';});
     ainp.addEventListener('blur',(function(aid){return function(){this.style.background='transparent';this.style.border='none';updateActividad(aid,this.value);};})(act.id));
     a2.appendChild(ainp);
     var a3=document.createElement('td');a3.style.padding='8px 12px';
@@ -1732,7 +2090,7 @@ function showBirthdayPanel(){
   if(!allItems.length){wrap.innerHTML='';return;}
   var alertHtml='';
   if(alerts.length){
-    alertHtml='<div class="bday-alert"><i class="fa-solid fa-cake-candles"></i> ¡FELIZ CUMPLEAÑOS! '+alerts.map(function(a){return a.e.nombre.split(' ').slice(0,2).join(' ')+' ('+a.edad+' años)';}).join(' &nbsp;·&nbsp; ')+'</div>';
+    alertHtml='<div class="bday-alert"><i class="fa-solid fa-cake-candles"></i> <span><span>¡FELIZ CUMPLEAÑOS!</span> '+alerts.map(function(a){return '<span data-noi18n>'+escBday(a.e.nombre.split(' ').slice(0,2).join(' '))+'</span> (<span>'+a.edad+' años</span>)';}).join(' &nbsp;·&nbsp; ')+'</span></div>';
   }
   var items=allItems.map(function(a){
     var ini=a.diff===0?'hoy':'';
@@ -1744,7 +2102,7 @@ function showBirthdayPanel(){
   }).join('');
   wrap.innerHTML=alertHtml+
     '<div class="bday-panel">'+
-      '<div class="bday-panel-hd"><i class="fa-solid fa-cake-candles"></i> Cumpleaños próximos <span style="font-weight:400;color:#64748B">(próximos 7 días)</span></div>'+
+      '<div class="bday-panel-hd"><i class="fa-solid fa-cake-candles"></i> Cumpleaños próximos <span style="font-weight:400;color:var(--text-2)">(próximos 7 días)</span></div>'+
       '<div style="display:flex;flex-wrap:wrap;gap:6px">'+items+'</div>'+
     '</div>';
 }
@@ -1767,7 +2125,7 @@ function intentarMapa(){
   // Resetear estado de fallback para poder iniciar el mapa
   delete el.dataset.fallback;
   el.innerHTML='';
-  el.style.cssText='height:280px;border-radius:8px;border:1px solid #E2E8F0;margin-top:12px';
+  el.style.cssText='height:280px;border-radius:8px;border:1px solid var(--border);margin-top:12px';
   _map=null;_marker=null;
   try{
     _map=L.map('map-dom').setView([-34.6037,-58.3816],12);
@@ -1800,7 +2158,7 @@ function showMapFallback(){
   if(!el||el.dataset.fallback) return;
   el.dataset.fallback='1';
   el.innerHTML='';
-  el.style.cssText='height:auto;border-radius:8px;border:1px solid #E2E8F0;margin-top:4px;padding:16px;background:#fff';
+  el.style.cssText='height:auto;border-radius:8px;border:1px solid var(--border);margin-top:4px;padding:16px;background:#fff';
   el.innerHTML=_buildPlanoCroquis();
   // Click en el SVG para marcar la X
   var svg=el.querySelector('#croquis-svg');
@@ -1824,7 +2182,7 @@ function _buildPlanoCroquis(){
   // col offsets: 0, B+G, 2*(B+G)  => 0,90,180
   // row offsets igual
   var O=15; // offset inicial para centrar
-  var svg='<svg id="croquis-svg" viewBox="0 0 320 320" style="width:100%;max-width:340px;cursor:crosshair;display:block;margin:0 auto;border:1px solid #CBD5E1;border-radius:6px;background:#F8FAFC">';
+  var svg='<svg id="croquis-svg" viewBox="0 0 320 320" style="width:100%;max-width:340px;cursor:crosshair;display:block;margin:0 auto;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg)">';
   // Calles (fondo gris claro entre manzanas)
   svg+='<rect x="0" y="0" width="320" height="320" fill="#E2E8F0"/>'; // fondo = calles
   // Dibujar 9 manzanas (3x3)
@@ -1834,7 +2192,7 @@ function _buildPlanoCroquis(){
       var my=O+row*(B+G);
       var esCentral=(row===1&&col===1);
       svg+='<rect x="'+mx+'" y="'+my+'" width="'+B+'" height="'+B+'"'+
-        ' fill="'+(esCentral?'#E0E7FF':'#fff')+'"'+
+        ' fill="'+(esCentral?'var(--primary-soft)':'#fff')+'"'+
         ' stroke="#94A3B8" stroke-width="1.2" rx="1"/>';
       if(esCentral){
         svg+='<text x="'+(mx+B/2)+'" y="'+(my+B/2-8)+'" text-anchor="middle" font-size="9" fill="var(--primary)" font-family="sans-serif" font-weight="700">PLANO DE</text>';
@@ -1850,7 +2208,7 @@ function _buildPlanoCroquis(){
   svg+='</svg>';
 
   // Inputs para nombres de calles debajo del plano
-  svg+='<div style="margin-top:12px;font-size:11px;color:#475569;font-weight:600;margin-bottom:6px">Hacé click en el plano para marcar la ubicación. Completá las calles de referencia:</div>';
+  svg+='<div style="margin-top:12px;font-size:11px;color:var(--text-soft);font-weight:600;margin-bottom:6px">Hacé click en el plano para marcar la ubicación. Completá las calles de referencia:</div>';
   svg+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
   svg+='<thead><tr>'+
     '<th style="background:var(--th-bg);color:var(--th-text);padding:5px 8px;text-align:left;border-radius:4px 0 0 0;font-size:11px">Nombre de calle</th>'+
@@ -1858,9 +2216,9 @@ function _buildPlanoCroquis(){
   '</tr></thead><tbody>';
   var filas=[['Norte','map-calle-norte','map-alt-norte'],['Sur','map-calle-sur','map-alt-sur'],['Este','map-calle-este','map-alt-este'],['Oeste','map-calle-oeste','map-alt-oeste']];
   filas.forEach(function(f,i){
-    svg+='<tr style="border-bottom:1px solid #E2E8F0;background:'+(i%2?'#F8FAFC':'#fff')+'">'+
-      '<td style="padding:4px 8px"><input id="'+f[1]+'" type="text" placeholder="'+f[0]+'..." style="width:100%;border:1.5px solid #CBD5E1;border-radius:5px;padding:6px 10px;font-size:13px;font-family:inherit;outline:none"></td>'+
-      '<td style="padding:4px 8px"><input id="'+f[2]+'" type="text" placeholder="1200" style="width:100%;border:1.5px solid #CBD5E1;border-radius:5px;padding:6px 8px;font-size:13px;font-family:inherit;outline:none;text-align:center"></td>'+
+    svg+='<tr style="border-bottom:1px solid var(--border);background:'+(i%2?'var(--bg)':'#fff')+'">'+
+      '<td style="padding:4px 8px"><input id="'+f[1]+'" type="text" placeholder="'+f[0]+'..." style="width:100%;border:1.5px solid var(--border-strong);border-radius:5px;padding:6px 10px;font-size:13px;font-family:inherit;outline:none"></td>'+
+      '<td style="padding:4px 8px"><input id="'+f[2]+'" type="text" placeholder="1200" style="width:100%;border:1.5px solid var(--border-strong);border-radius:5px;padding:6px 8px;font-size:13px;font-family:inherit;outline:none;text-align:center"></td>'+
     '</tr>';
   });
   svg+='</tbody></table>';
@@ -2123,7 +2481,7 @@ function renderEvalForm(){
   var container=document.getElementById('eval-container');
 
   if(!empId){
-    container.innerHTML='<div style="padding:30px;text-align:center;color:#94A3B8;font-size:13px">Seleccioná un empleado para evaluar</div>';
+    container.innerHTML='<div style="padding:30px;text-align:center;color:var(--text-2);font-size:13px">Seleccioná un empleado para evaluar</div>';
     return;
   }
 
@@ -2152,11 +2510,11 @@ function renderEvalForm(){
     '<div><div class="eval-title">'+escHtml(emp.nombre)+'</div>'+
     '<div class="eval-sub">'+escHtml(emp.puesto)+' · '+escHtml(emp.sector)+' · '+escHtml(emp.planta)+'</div></div>'+
     '</div>'+
-    '<div style="font-size:11px;color:#64748B">Completá el nivel de dominio para cada actividad. Los cambios se reflejan automáticamente en la Matriz de Sustitución.</div>';
+    '<div style="font-size:11px;color:var(--text-2)">Completá el nivel de dominio para cada actividad. Los cambios se reflejan automáticamente en la Matriz de Sustitución.</div>';
   container.appendChild(hd);
 
   if(!acts.length){
-    var noActs=document.createElement('div');noActs.style.cssText='padding:20px;text-align:center;color:#94A3B8';
+    var noActs=document.createElement('div');noActs.style.cssText='padding:20px;text-align:center;color:var(--text-2)';
     noActs.textContent='No hay actividades definidas para este filtro.';
     container.appendChild(noActs);return;
   }
@@ -2167,13 +2525,13 @@ function renderEvalForm(){
 
     var sec=document.createElement('div');sec.className='eval-section';
     var title=document.createElement('div');
-    title.style.cssText='font-size:11px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #E0E7FF';
+    title.style.cssText='font-size:11px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--primary-soft)';
     title.innerHTML='<i class="fa-solid fa-briefcase"></i> '+escHtml(puesto.valor);
     sec.appendChild(title);
 
     pActs.forEach(function(act){
       var row=document.createElement('div');
-      row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F1F5F9;gap:12px';
+      row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bg-alt);gap:12px';
 
       var actName=document.createElement('div');
       actName.style.cssText='font-size:13px;flex:1';actName.textContent=act.nombre;
@@ -2200,7 +2558,7 @@ function renderEvalForm(){
 
       // Current level label
       var lbl=document.createElement('div');
-      lbl.style.cssText='font-size:11px;color:#64748B;min-width:110px;text-align:right';
+      lbl.style.cssText='font-size:11px;color:var(--text-2);min-width:110px;text-align:right';
       lbl.id='eval-lbl-'+empId+'-'+act.id;
       // Update label when any button clicked
       function updateLbl(){lbl.textContent=NIVEL_LABELS[getEval(empId,act.id)];}
@@ -2265,7 +2623,7 @@ function renderMatriz(){
   container.innerHTML='';
 
   if(!acts.length||!emps.length){
-    container.innerHTML='<div style="padding:30px;text-align:center;color:#94A3B8">Sin datos para mostrar. Ajustá los filtros o cargá evaluaciones primero.</div>';
+    container.innerHTML='<div style="padding:30px;text-align:center;color:var(--text-2)">Sin datos para mostrar. Ajustá los filtros o cargá evaluaciones primero.</div>';
     return;
   }
 
@@ -2288,7 +2646,7 @@ function renderMatriz(){
     var p=tabPuestos.find(function(x){return x.id===pid;})||{valor:'—'};
     var th=document.createElement('th');
     th.colSpan=puestoGroups[pid].length;
-    th.style.cssText='background:var(--th-grupo-bg);color:var(--th-text);border-left:2px solid var(--th-linea);font-size:11px';
+    th.style.cssText='background:var(--th-grupo-bg);color:var(--th-grupo-text);border-left:2px solid var(--th-linea);font-size:11px';
     th.textContent=p.valor;
     tr1.appendChild(th);
   });
@@ -2319,7 +2677,7 @@ function renderMatriz(){
     td0.innerHTML='<div style="display:flex;align-items:center;gap:6px">'+
       miniAvatar(emp)+
       '<div><div style="font-size:12px;font-weight:700">'+escHtml(emp.nombre.split(' ').slice(0,2).join(' '))+'</div>'+
-      '<div style="font-size:10px;color:#64748B">'+escHtml(emp.puesto)+'</div></div></div>';
+      '<div style="font-size:10px;color:var(--text-2)">'+escHtml(emp.puesto)+'</div></div></div>';
     tr.appendChild(td0);
 
     var totalSum=0,totalCount=0;
@@ -2328,7 +2686,7 @@ function renderMatriz(){
         var nivel=getEval(emp.id,act.id);
         totalSum+=nivel;totalCount++;
         var td=document.createElement('td');
-        td.style.cssText='border-left:'+(ai===0?'2px solid #E2E8F0':'');
+        td.style.cssText='border-left:'+(ai===0?'2px solid var(--border)':'');
         var score=document.createElement('span');score.className='mz-score mz-'+nivel;score.textContent=nivel;
         score.title=emp.nombre+' · '+act.nombre+': '+NIVEL_LABELS[nivel];
         td.appendChild(score);tr.appendChild(td);
@@ -2337,7 +2695,7 @@ function renderMatriz(){
 
     // Total avg
     var avg=totalCount>0?(totalSum/totalCount).toFixed(1):0;
-    var avgTd=document.createElement('td');avgTd.style.cssText='background:#f8fafc;font-weight:800;font-size:13px;color:var(--primary)';
+    var avgTd=document.createElement('td');avgTd.style.cssText='background:var(--bg);font-weight:800;font-size:13px;color:var(--primary)';
     avgTd.textContent=avg;
     tr.appendChild(avgTd);
     tbody.appendChild(tr);
@@ -2471,9 +2829,9 @@ function renderPersonal(){
       '<td>'+e.planta+'</td><td>'+e.sector+'</td><td>'+e.puesto+'</td>'+
       '<td><span class="badge badge-gray">'+( e.categoria||'—')+'</span></td>'+
       '<td>'+( e.cobertura||'—')+'</td>'+
-      '<td>'+(e.consultoraInicio?fd(e.consultoraInicio)+' <span style="font-size:10px;color:#64748B">('+fd(e.inicio)+')</span>':fd(e.inicio))+'</td>'+
+      '<td>'+(e.consultoraInicio?fd(e.consultoraInicio)+' <span style="font-size:10px;color:var(--text-2)">('+fd(e.inicio)+')</span>':fd(e.inicio))+'</td>'+
       '<td>'+(_esConsultora?'<span class="badge badge-blue" title="Inicio: '+fd(e.consultoraInicio||'')+
-          '  Fin: '+fd(e.consultoraFin||'')+'">'+ e.consultora+'</span>':'<span style="color:#94A3B8">—</span>')+'</td>'+
+          '  Fin: '+fd(e.consultoraFin||'')+'">'+ e.consultora+'</span>':'<span style="color:var(--text-2)">—</span>')+'</td>'+
       '<td><span class="badge '+(a.a>=5?'badge-ok':'badge-warn')+
         '" title="'+(_esConsultora?'Desde consultora '+fd(e.consultoraInicio||e.inicio):'Desde '+fd(e.inicio))+'">'+a.s+(_esConsultora?' &#9432;':'')+'</span></td>'+
       '<td><span class="badge '+vcls+'">'+vd+'d</span></td>'+
@@ -2483,7 +2841,7 @@ function renderPersonal(){
         '<button class="btn btn-danger btn-sm btn-icon" title="Eliminar" onclick="eliminarEmp(\''+e.id+'\')"><i class="fa-solid fa-trash-can"></i></button>'+
       '</td></tr>';
   }).join('');
-  document.getElementById('tb-personal').innerHTML=rows||'<tr><td colspan="12" style="text-align:center;padding:30px;color:#94A3B8">Sin resultados</td></tr>';
+  document.getElementById('tb-personal').innerHTML=rows||'<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--text-2)">Sin resultados</td></tr>';
   document.getElementById('tf-personal').textContent=data.length+' de '+empleados.length+' empleados';
   showBirthdayPanel();
   document.getElementById('tf-personal2').textContent=data.length!==activos.length?'('+data.filter(function(e){return e.activo==='1';}).length+' activos en vista)':'';
@@ -2638,7 +2996,7 @@ function renderEquiposPanel(emp){
     eq.tel.forEach(function(item,idx){ secTel.appendChild(buildTelRow(emp.id,item,idx)); });
   } else {
     var emptyT=document.createElement('div');
-    emptyT.style.cssText='padding:12px;text-align:center;color:#94A3B8;font-size:12px;background:#F8FAFC;border-radius:6px;margin-bottom:6px;border:1px dashed #E2E8F0';
+    emptyT.style.cssText='padding:12px;text-align:center;color:var(--text-2);font-size:12px;background:var(--bg);border-radius:6px;margin-bottom:6px;border:1px dashed var(--border)';
     emptyT.textContent='Sin teléfonos asignados — usá el botón + para agregar';
     secTel.appendChild(emptyT);
   }
@@ -2662,7 +3020,7 @@ function renderEquiposPanel(emp){
   var eq2=getEmpEquipos(emp.id);
   if(!eq2.comp.length){
     var emptyC=document.createElement('div');
-    emptyC.style.cssText='padding:12px;text-align:center;color:#94A3B8;font-size:12px;background:#F8FAFC;border-radius:6px;margin-bottom:6px;border:1px dashed #E2E8F0';
+    emptyC.style.cssText='padding:12px;text-align:center;color:var(--text-2);font-size:12px;background:var(--bg);border-radius:6px;margin-bottom:6px;border:1px dashed var(--border)';
     emptyC.textContent='Sin equipos asignados — usá el botón + para agregar';
     secComp.appendChild(emptyC);
   } else {
@@ -2683,7 +3041,7 @@ function renderEquiposPanel(emp){
 function buildTelRow(empId,item,idx){
   var card=document.createElement('div');
   card.setAttribute('data-eq-row','tel');
-  card.style.cssText='border:1px solid #E0E7FF;border-radius:8px;padding:12px;margin-bottom:10px;background:#f8fafc';
+  card.style.cssText='border:1px solid var(--primary-soft);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--bg)';
 
   var hdr=document.createElement('div');
   hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:10px';
@@ -2711,7 +3069,7 @@ function buildTelRow(empId,item,idx){
   [{label:'Marca',key:'marca',ph:'Samsung, Apple, Motorola...'},{label:'Modelo',key:'modelo',ph:'Galaxy A54, iPhone 14...'}].forEach(function(c){
     var wrap=document.createElement('div');
     var fl=document.createElement('label');
-    fl.style.cssText='font-size:10px;color:#64748B;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px';
+    fl.style.cssText='font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px';
     fl.textContent=c.label;
     var inp=document.createElement('input');
     inp.className='eq-input';inp.type='text';inp.placeholder=c.ph;inp.value=item[c.key]||'';
@@ -2722,7 +3080,7 @@ function buildTelRow(empId,item,idx){
   // Estado
   var wrapEst=document.createElement('div');
   var lblEst=document.createElement('label');
-  lblEst.style.cssText='font-size:10px;color:#64748B;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px';
+  lblEst.style.cssText='font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px';
   lblEst.textContent='Estado';
   var selEst=document.createElement('select');
   selEst.className='eq-input';selEst.setAttribute('data-eq-key','estado');
@@ -2740,7 +3098,7 @@ function buildTelRow(empId,item,idx){
 function buildCompCard(empId,item,idx){
   var card=document.createElement('div');
   card.setAttribute('data-eq-card','comp');
-  card.style.cssText='border:1px solid #E0E7FF;border-radius:8px;padding:12px;margin-bottom:10px;background:#f8fafc';
+  card.style.cssText='border:1px solid var(--primary-soft);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--bg)';
 
   var hdr=document.createElement('div');
   hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:10px';
@@ -2777,7 +3135,7 @@ function buildCompCard(empId,item,idx){
   [{label:'Marca',key:'marca',ph:'Dell, HP, Lenovo...'},{label:'Modelo',key:'modelo',ph:'XPS 15, ThinkPad...'},{label:'N° de Serie',key:'serie',ph:'SN-XXXXXXXXX'},{label:'Procesador',key:'procesador',ph:'Intel i5-1235U, Ryzen 5...'},{label:'ID del Dispositivo',key:'idDispositivo',ph:'ID Windows / MAC address...'},{label:'RAM',key:'ram',ph:'8 GB, 16 GB...'},{label:'Almacenamiento',key:'almacenamiento',ph:'256 GB SSD, 1 TB HDD...'}].forEach(function(c){
     var wrap=document.createElement('div');
     var lbl=document.createElement('label');
-    lbl.style.cssText='font-size:10px;color:#64748B;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px';
+    lbl.style.cssText='font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px';
     lbl.textContent=c.label;
     var inp=document.createElement('input');
     inp.className='eq-input';inp.type='text';inp.placeholder=c.ph;inp.value=item[c.key]||'';
@@ -2799,7 +3157,7 @@ function renderVacPanel(emp){
     {l:'10 a 20 años',d:'28 días',ok:a.a>=10&&a.a<20},
     {l:'Más de 20 años',d:'35 días',ok:a.a>=20}
   ].map(function(r){
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid #F1F5F9;font-size:12px'+(r.ok?';background:var(--success-light);font-weight:700;color:var(--success-ink)':'')+'">'+
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--bg-alt);font-size:12px'+(r.ok?';background:var(--success-light);font-weight:700;color:var(--success-ink)':'')+'">'+
       '<span>'+(r.ok?'<i class="fa-solid fa-circle-check"></i> ':'')+r.l+'</span><span>'+r.d+'</span></div>';
   }).join('');
   var p=getVacPeriodo(emp.id);
@@ -2815,8 +3173,8 @@ function renderVacPanel(emp){
         '<div class="stat-val" style="font-size:20px;color:'+(usados===0?'var(--neutral)':usados<vd?'var(--warning-ink)':usados>vd?'var(--danger-ink)':'var(--success-ink)')+'">'+usados+'</div>'+
         '<div class="stat-lbl">de '+vd+' días LCT</div></div>'+
     '</div>'+
-    '<div style="border-radius:8px;overflow:hidden;border:1px solid #F1F5F9;margin-bottom:14px">'+rows+'</div>'+
-    '<div style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:8px">Períodos de vacaciones</div>'+
+    '<div style="border-radius:8px;overflow:hidden;border:1px solid var(--bg-alt);margin-bottom:14px">'+rows+'</div>'+
+    '<div style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">Períodos de vacaciones</div>'+
     '<div style="display:grid;gap:8px">'+
       vacPanelPeriodo(emp.id,'sal1','ret1','Período 1')+
       vacPanelPeriodo(emp.id,'sal2','ret2','Período 2')+
@@ -2837,12 +3195,12 @@ function vacPanelPeriodo(empId,salF,retF,label){
   var p=getVacPeriodo(empId);
   var sal=p[salF]||'',ret=p[retF]||'';
   var dias=diasEntreFechas(sal,ret);
-  return '<div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #E2E8F0;border-radius:6px;padding:8px 12px;font-size:12px">'+
+  return '<div style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px">'+
     '<span style="font-weight:700;min-width:70px;color:var(--primary)">'+label+'</span>'+
-    '<span style="color:#64748B;font-size:11px">Salida:</span>'+
-    '<input id="vpf-'+empId+'-'+salF+'" type="date" value="'+sal+'" style="border:1px solid #E2E8F0;border-radius:4px;padding:3px 6px;font-size:11px;outline:none">'+
-    '<span style="color:#64748B;font-size:11px">Retorno:</span>'+
-    '<input id="vpf-'+empId+'-'+retF+'" type="date" value="'+ret+'" style="border:1px solid #E2E8F0;border-radius:4px;padding:3px 6px;font-size:11px;outline:none">'+
+    '<span style="color:var(--text-2);font-size:11px">Salida:</span>'+
+    '<input id="vpf-'+empId+'-'+salF+'" type="date" value="'+sal+'" style="border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:11px;outline:none">'+
+    '<span style="color:var(--text-2);font-size:11px">Retorno:</span>'+
+    '<input id="vpf-'+empId+'-'+retF+'" type="date" value="'+ret+'" style="border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:11px;outline:none">'+
     (dias>0?'<span style="font-size:12px;font-weight:700;color:var(--primary);margin-left:4px">'+dias+'d</span>':'')+
   '</div>';
 }
@@ -2861,7 +3219,7 @@ function resumenBadges(e){
     '<span class="badge badge-warn">⏱ '+a.s+'</span>'+
     '<span class="badge badge-purple">🏖 '+vd+' días vac.</span>'+
     (e.idioma?'<span class="badge badge-gray">🌐 '+e.idioma+'</span>':'')+
-  '</div><div style="font-size:11px;color:#64748B">'+e.puesto+' · '+e.sector+' · '+e.planta+'</div>';
+  '</div><div style="font-size:11px;color:var(--text-2)">'+e.puesto+' · '+e.sector+' · '+e.planta+'</div>';
 }
 
 function toggleConsultoraFechas(){
@@ -3052,7 +3410,7 @@ function renderDiasCell(el, tot, used){
   // Usado color: amarillo=menor, rojo=mayor, verde=igual
   var usadoColor, usadoBg;
   if(used===0){
-    usadoColor='#64748B'; usadoBg='#F1F5F9';
+    usadoColor='var(--text-2)'; usadoBg='var(--bg-alt)';
   } else if(used < tot){
     usadoColor='var(--warning-ink)'; usadoBg='var(--warning-light)';  // amarillo
   } else if(used > tot){
@@ -3067,7 +3425,7 @@ function renderDiasCell(el, tot, used){
         '<span style="display:inline-flex;align-items:center;gap:3px;background:'+usadoBg+';color:'+usadoColor+';border-radius:10px;padding:2px 8px;font-size:12px;font-weight:700;border:1.5px solid '+usadoColor+'30">'+
           (used<tot?'&#9651; ':used>tot?'&#9650; ':'<i class="fa-solid fa-circle-check"></i> ')+used+'d'+
         '</span>':
-        '<span style="font-size:11px;color:#CBD5E1">sin asignar</span>')+
+        '<span style="font-size:11px;color:var(--border-strong)">sin asignar</span>')+
     '</div>';
 }
 function updateUsadosCell(empId){
@@ -3140,7 +3498,7 @@ function renderVac(){
 
   if(!data.length){
     var empty=document.createElement('tr');
-    var ec=document.createElement('td');ec.colSpan=9;ec.style.cssText='text-align:center;padding:30px;color:#94A3B8';
+    var ec=document.createElement('td');ec.colSpan=9;ec.style.cssText='text-align:center;padding:30px;color:var(--text-2)';
     ec.textContent='Sin resultados';empty.appendChild(ec);tbody.appendChild(empty);
     document.getElementById('tf-vac').textContent='0 empleados';
     return;
@@ -3153,7 +3511,7 @@ function renderVac(){
 
     // Nombre
     var tdNom=document.createElement('td');tdNom.style.padding='8px 12px';
-    tdNom.innerHTML='<div style="display:flex;align-items:center;gap:7px">'+miniAvatar(e)+'<div><strong>'+escBday(e.nombre)+'</strong><div style="font-size:10px;color:#64748B">'+e.legajo+'</div></div></div>';
+    tdNom.innerHTML='<div style="display:flex;align-items:center;gap:7px">'+miniAvatar(e)+'<div><strong>'+escBday(e.nombre)+'</strong><div style="font-size:10px;color:var(--text-2)">'+e.legajo+'</div></div></div>';
     // Planta
     var tdPl=document.createElement('td');tdPl.style.padding='8px 12px';tdPl.textContent=e.planta;
     // Sector
@@ -3256,7 +3614,7 @@ function renderGantt(){
   // Rows
   if(!data.length){
     var noData=document.createElement('div');
-    noData.style.cssText='padding:30px;text-align:center;color:#94A3B8;font-size:13px';
+    noData.style.cssText='padding:30px;text-align:center;color:var(--text-2);font-size:13px';
     noData.textContent='Sin empleados que coincidan con los filtros';
     ganttWrap.appendChild(noData);
   } else {
@@ -3330,7 +3688,7 @@ function renderGantt(){
 
       if(!hasBars){
         var noPer=document.createElement('div');
-        noPer.style.cssText='font-size:11px;color:#CBD5E1;padding:0 12px;line-height:38px';
+        noPer.style.cssText='font-size:11px;color:var(--border-strong);padding:0 12px;line-height:38px';
         noPer.textContent='Sin períodos cargados';
         tl.appendChild(noPer);
       }
@@ -3343,12 +3701,12 @@ function renderGantt(){
   // Legend
   var legend=document.createElement('div');legend.className='gantt-legend';
   legend.innerHTML=
-    '<strong style="font-size:11px;color:#64748B">Referencias:</strong>'+
+    '<strong style="font-size:11px;color:var(--text-2)">Referencias:</strong>'+
     '<div class="gantt-leg-item"><div class="gantt-leg-dot" style="background:var(--primary)"></div>Período 1</div>'+
     '<div class="gantt-leg-item"><div class="gantt-leg-dot" style="background:var(--serie-2)"></div>Período 2</div>'+
     '<div class="gantt-leg-item"><div class="gantt-leg-dot" style="background:var(--serie-3)"></div>Período 3</div>'+
     '<div class="gantt-leg-item"><div class="gantt-leg-dot" style="background:var(--danger);width:3px;height:14px;border-radius:0"></div>Hoy</div>'+
-    '<div class="gantt-leg-item" style="color:#64748B"><span style="opacity:.5;background:var(--primary);color:white;padding:1px 6px;border-radius:3px;font-size:10px">pasado</span>&nbsp;Período ya concluido</div>';
+    '<div class="gantt-leg-item" style="color:var(--text-2)"><span style="opacity:.5;background:var(--primary);color:white;padding:1px 6px;border-radius:3px;font-size:10px">pasado</span>&nbsp;Período ya concluido</div>';
   ganttWrap.appendChild(legend);
 
   container.appendChild(ganttWrap);
@@ -3418,7 +3776,7 @@ function resetRopa(){document.getElementById('rows-ropa').innerHTML='';ropaCount
 function addRopaRow(){
   ropaCount++;
   var tr=document.createElement('tr');
-  tr.innerHTML='<td style="text-align:center;color:#94A3B8">'+ropaCount+'</td>'+
+  tr.innerHTML='<td style="text-align:center;color:var(--text-2)">'+ropaCount+'</td>'+
     '<td><select style="width:100%;border:none;outline:none;font-size:12px;font-family:inherit"><option value="">— Seleccionar —</option>'+ARTS.map(function(a){return'<option>'+a+'</option>';}).join('')+'<option>Otro...</option></select></td>'+
     '<td><input type="text" placeholder="XL / Azul"></td>'+
     '<td><input type="number" value="1" min="1" style="width:46px"></td>'+
@@ -3438,22 +3796,22 @@ function addCompRow(data){
   // Fila 1: número + Tipo / Marca / Modelo / N° Serie / Estado
   var tr1=document.createElement('tr');
   tr1.style.borderBottom='none';
-  tr1.innerHTML='<td style="text-align:center;color:#94A3B8;vertical-align:top;padding-top:8px" rowspan="2">'+compCount+'</td>'+
-    '<td style="font-size:10px;color:#64748B;padding-bottom:1px"><span style="font-size:9px;color:#94A3B8;text-transform:uppercase;letter-spacing:.3px">Tipo</span><br>'+
+  tr1.innerHTML='<td style="text-align:center;color:var(--text-2);vertical-align:top;padding-top:8px" rowspan="2">'+compCount+'</td>'+
+    '<td style="font-size:10px;color:var(--text-2);padding-bottom:1px"><span style="font-size:9px;color:var(--text-2);text-transform:uppercase;letter-spacing:.3px">Tipo</span><br>'+
       '<select style="width:100%;border:none;outline:none;font-size:12px;font-family:inherit">'+sel(['Notebook','PC escritorio','Monitor','Mouse','Teclado','Auriculares','Webcam','Docking Station','Tablet','Disco externo','Otro'],d.tipo)+'</select></td>'+
-    '<td><span style="font-size:9px;color:#94A3B8;text-transform:uppercase;letter-spacing:.3px">Marca</span><br>'+inp(d.marca,'Dell, HP...')+'</td>'+
-    '<td><span style="font-size:9px;color:#94A3B8;text-transform:uppercase;letter-spacing:.3px">Modelo</span><br>'+inp(d.modelo,'XPS 15...')+'</td>'+
-    '<td><span style="font-size:9px;color:#94A3B8;text-transform:uppercase;letter-spacing:.3px">N° de Serie</span><br>'+inp(d.serie,'SN-...')+'</td>'+
-    '<td><span style="font-size:9px;color:#94A3B8;text-transform:uppercase;letter-spacing:.3px">Estado</span><br>'+
+    '<td><span style="font-size:9px;color:var(--text-2);text-transform:uppercase;letter-spacing:.3px">Marca</span><br>'+inp(d.marca,'Dell, HP...')+'</td>'+
+    '<td><span style="font-size:9px;color:var(--text-2);text-transform:uppercase;letter-spacing:.3px">Modelo</span><br>'+inp(d.modelo,'XPS 15...')+'</td>'+
+    '<td><span style="font-size:9px;color:var(--text-2);text-transform:uppercase;letter-spacing:.3px">N° de Serie</span><br>'+inp(d.serie,'SN-...')+'</td>'+
+    '<td><span style="font-size:9px;color:var(--text-2);text-transform:uppercase;letter-spacing:.3px">Estado</span><br>'+
       '<select style="width:100%;border:none;outline:none;font-size:12px;font-family:inherit">'+sel(['Nuevo','Bueno','Regular','Deteriorado'],d.estado)+'</select></td>';
   // Fila 2: Procesador / ID Dispositivo / RAM / Disco (sin número, sin borde superior)
   var tr2=document.createElement('tr');
-  tr2.style.cssText='background:#F8FAFC';
+  tr2.style.cssText='background:var(--bg)';
   tr2.innerHTML=
-    '<td style="padding-top:2px"><span style="font-size:9px;color:#94A3B8;text-transform:uppercase;letter-spacing:.3px">Procesador</span><br>'+inp(d.procesador,'Intel i5, Ryzen 5...')+'</td>'+
-    '<td style="padding-top:2px"><span style="font-size:9px;color:#94A3B8;text-transform:uppercase;letter-spacing:.3px">ID Dispositivo</span><br>'+inp(d.idDispositivo,'ID Windows / MAC...')+'</td>'+
-    '<td style="padding-top:2px"><span style="font-size:9px;color:#94A3B8;text-transform:uppercase;letter-spacing:.3px">RAM</span><br>'+inp(d.ram,'8 GB, 16 GB...')+'</td>'+
-    '<td colspan="2" style="padding-top:2px"><span style="font-size:9px;color:#94A3B8;text-transform:uppercase;letter-spacing:.3px">Capacidad de Disco</span><br>'+inp(d.almacenamiento,'256 GB SSD, 1 TB HDD...')+'</td>';
+    '<td style="padding-top:2px"><span style="font-size:9px;color:var(--text-2);text-transform:uppercase;letter-spacing:.3px">Procesador</span><br>'+inp(d.procesador,'Intel i5, Ryzen 5...')+'</td>'+
+    '<td style="padding-top:2px"><span style="font-size:9px;color:var(--text-2);text-transform:uppercase;letter-spacing:.3px">ID Dispositivo</span><br>'+inp(d.idDispositivo,'ID Windows / MAC...')+'</td>'+
+    '<td style="padding-top:2px"><span style="font-size:9px;color:var(--text-2);text-transform:uppercase;letter-spacing:.3px">RAM</span><br>'+inp(d.ram,'8 GB, 16 GB...')+'</td>'+
+    '<td colspan="2" style="padding-top:2px"><span style="font-size:9px;color:var(--text-2);text-transform:uppercase;letter-spacing:.3px">Capacidad de Disco</span><br>'+inp(d.almacenamiento,'256 GB SSD, 1 TB HDD...')+'</td>';
   var tbody=document.getElementById('rows-comp');
   tbody.appendChild(tr1);
   tbody.appendChild(tr2);
@@ -3466,7 +3824,7 @@ function addTelRow(data){
   var d=data||{};
   var sel=function(opts,val){return opts.map(function(o){return'<option'+(o===(val||opts[0])?' selected':'')+'>'+o+'</option>';}).join('');};
   var tr=document.createElement('tr');
-  tr.innerHTML='<td style="text-align:center;color:#94A3B8">'+telCount+'</td>'+
+  tr.innerHTML='<td style="text-align:center;color:var(--text-2)">'+telCount+'</td>'+
     '<td><input type="text" value="'+(d.marca||'')+'" placeholder="Samsung, Apple..."></td>'+
     '<td><input type="text" value="'+(d.modelo||'')+'" placeholder="Galaxy A54, iPhone 14..."></td>'+
     '<td><select style="width:100%;border:none;outline:none;font-size:12px;font-family:inherit">'+sel(['Nuevo','Bueno','Regular','Deteriorado'],d.estado)+'</select></td>';
@@ -3496,7 +3854,7 @@ function doPrint(id){
   document.body.appendChild(fr);
   var d=fr.contentWindow.document;
   d.open();
-  d.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>LOGITEx RRHH</title><style>'+
+  d.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>LOGITEx RRHH</title><style>'+_CSS_VARS_IMPRESION+
     '*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Segoe UI",sans-serif;color:#111;font-size:12px;padding:24px}'+
     '.print-form{max-width:780px;margin:0 auto}'+
     '.fhdr{border-bottom:3px solid #6366F1;padding-bottom:12px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}'+
@@ -3531,7 +3889,7 @@ function doPrint(id){
 // USUARIOS
 // ══════════════════════════════════════════════════════════════════
 function renderUsuarios(){
-  api('GET','/api/usuarios').then(function(d){ if(d.ok){usuarios=d.usuarios;_dibujarUsuarios();} else document.getElementById('lista-usuarios').innerHTML='<div style="padding:30px;color:#EF4444;text-align:center">'+(d.error||'Error')+'</div>'; });
+  api('GET','/api/usuarios').then(function(d){ if(d.ok){usuarios=d.usuarios;_dibujarUsuarios();} else document.getElementById('lista-usuarios').innerHTML='<div style="padding:30px;color:var(--red);text-align:center">'+(d.error||'Error')+'</div>'; });
 }
 function _dibujarUsuarios(){
   var html=usuarios.map(function(u){
@@ -3540,8 +3898,8 @@ function _dibujarUsuarios(){
       '<div class="usr-av">'+av+'</div>'+
       '<div style="flex:1">'+
         '<div style="font-weight:700;font-size:14px">'+u.nombre+'</div>'+
-        '<div style="font-size:12px;color:#64748B;margin-top:2px">@'+u.username+' &nbsp;·&nbsp; '+
-          (u.rol==='admin'?'<span class="badge badge-blue">Administrador</span>':'<span class="badge badge-gray">Operador</span>')+
+        '<div style="font-size:12px;color:var(--text-2);margin-top:2px">@'+u.username+' &nbsp;·&nbsp; '+
+          (u.rol==='admin'?'<span class="badge badge-blue">Administrador</span>':u.rol==='consulta'?'<span class="badge badge-violet">Consulta</span>':'<span class="badge badge-gray">Operador</span>')+
           ' &nbsp;·&nbsp; <span class="badge '+(u.activo==='1'?'badge-ok':'badge-no')+'">'+(u.activo==='1'?'Activo':'Inactivo')+'</span>'+
           ' &nbsp;·&nbsp; <span class="badge badge-planta"><i class="fa-solid fa-industry"></i> '+escBday(textoPlantas(u))+'</span>'+
         '</div>'+
@@ -3551,7 +3909,7 @@ function _dibujarUsuarios(){
         '<button class="btn btn-danger btn-sm" onclick="eliminarUsuario(\''+u.id+'\')"><i class="fa-solid fa-trash-can"></i></button>':'')+
     '</div>';
   }).join('');
-  document.getElementById('lista-usuarios').innerHTML=html||'<div style="padding:30px;color:#94A3B8;text-align:center">No hay usuarios</div>';
+  document.getElementById('lista-usuarios').innerHTML=html||'<div style="padding:30px;color:var(--text-2);text-align:center">No hay usuarios</div>';
 }
 function abrirUsuario(){
   editingUsrId=null;
@@ -3806,7 +4164,7 @@ function comprobarCambiosRemotos(){
 function guardarDB(callback){
   if(callback) _cbsGuardado.push(callback);
   if(_guardando){ _pendiente=true; return; }
-  if(!currentUser||_dbVersion===null||!_base){ _flushCbs(); return; }
+  if(!currentUser||_dbVersion===null||!_base||esConsulta()){ _flushCbs(); return; }
   var actual=collectDB();
   var c=calcularCambios(actual,_base);
   if(!c){ _flushCbs(); return; }
@@ -3946,7 +4304,7 @@ function abrirPanelDatos(){
       }).join('')+'</table>';
     });
     var cont=document.getElementById('dt-historial');
-    cont.innerHTML='<div style="padding:10px;color:#94A3B8">Cargando...</div>';
+    cont.innerHTML='<div style="padding:10px;color:var(--text-2)">Cargando...</div>';
     api('GET','/api/historial').then(function(d){
       if(!d.ok){cont.textContent=d.error||'Error';return;}
       var nombres={guardar:'Guardó datos',login:'Ingresó',login_fallido:'Intento de ingreso fallido',
@@ -3955,9 +4313,9 @@ function abrirPanelDatos(){
         carga_inicial:'Carga inicial',reset_password:'Contraseña reseteada',descargar_backup:'Descargó un backup'};
       var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
       cont.innerHTML='<table style="width:100%;border-collapse:collapse">'+d.historial.map(function(h){
-        return '<tr style="border-bottom:1px solid #F1F5F9"><td style="padding:4px 8px;white-space:nowrap;color:#64748B">'+
+        return '<tr style="border-bottom:1px solid var(--bg-alt)"><td style="padding:4px 8px;white-space:nowrap;color:var(--text-2)">'+
           esc(fmtFecha(h.fecha))+'</td><td style="padding:4px 8px">'+esc(h.usuario)+'</td><td style="padding:4px 8px">'+
-          esc(nombres[h.accion]||h.accion)+(h.detalle?' <span style="color:#94A3B8">— '+esc(h.detalle)+'</span>':'')+'</td></tr>';
+          esc(nombres[h.accion]||h.accion)+(h.detalle?' <span style="color:var(--text-2)">— '+esc(h.detalle)+'</span>':'')+'</td></tr>';
       }).join('')+'</table>';
     });
   }
@@ -3973,6 +4331,9 @@ function cambiarMiPassword(){
     alert('✅ Contraseña actualizada.');
   });
 }
+
+iniciarIdiomas();
+pintarBotonTema();
 
 // ── Arranque: si ya hay una sesión abierta (por ejemplo al recargar), entrar directo ──
 api('GET','/api/sesion').then(function(d){
