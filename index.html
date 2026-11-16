@@ -49,6 +49,12 @@
   --chrome-active:#EEF2FF;
   --chrome-active-text:#4338CA;
   --chrome-icon:#6366F1;
+  /* Encabezados de columnas (Gantt, Matriz, tablas de actas) */
+  --th-grupo-bg:#E0E7FF;
+  --th-bg:#EEF2FF;
+  --th-total-bg:#C7D2FE;
+  --th-text:#312E81;
+  --th-linea:#C7D2FE;
 
   /* Marca */
   --primary:#6366F1;
@@ -113,6 +119,11 @@ body.dark{
   --chrome-active:rgba(99,102,241,.28);
   --chrome-active-text:#FFFFFF;
   --chrome-icon:#C7D2FE;
+  --th-grupo-bg:#4338CA;
+  --th-bg:#6366F1;
+  --th-total-bg:#312E81;
+  --th-text:#FFFFFF;
+  --th-linea:rgba(255,255,255,.25);
   --primary:#6366F1;
   --primary-dark:#A5B4FC;
   --primary-hover:#818CF8;
@@ -466,7 +477,7 @@ body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
 .pfield label{font-size:9.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
 .pfield span{font-size:13px;font-weight:500;border-bottom:1px solid var(--border);padding-bottom:3px;min-height:20px;color:var(--text)}
 .items-tbl{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0}
-.items-tbl th{background:var(--primary);color:#fff;padding:7px 10px;text-align:left;font-size:10.5px;cursor:default;border:none}
+.items-tbl th{background:var(--th-bg);color:var(--th-text);padding:7px 10px;text-align:left;font-size:10.5px;cursor:default;border:none}
 .items-tbl td{border:1px solid var(--border);padding:6px 10px}
 .items-tbl tr:nth-child(even) td{background:var(--surface-2)}
 .items-tbl td input,.items-tbl td select{border:none;outline:none;width:100%;background:transparent;font-size:12px;color:var(--text)}
@@ -538,7 +549,7 @@ body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
 .act-grid-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
 .act-grid-table tr:last-child td{border-bottom:none}
 .nivel-dot{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;cursor:default;vertical-align:middle}
-.nivel-0,.mz-0{background:#F1F5F9;color:#64748B}
+.nivel-0,.mz-0{background:var(--bg-alt);color:var(--text-faint)}
 .nivel-1,.mz-1{background:var(--danger-soft);color:var(--danger-ink)}
 .nivel-2,.mz-2{background:var(--warning-soft);color:var(--warning-ink)}
 .nivel-3,.mz-3{background:var(--success-soft);color:var(--success-ink)}
@@ -551,8 +562,8 @@ body.dark .info-green{border-color:var(--success-soft);color:var(--text)}
 .eval-sub{font-size:12px;color:var(--text-faint);margin-top:3px}
 .nivel-picker{display:flex;gap:4px;align-items:center}
 .nivel-btn{width:30px;height:30px;border-radius:50%;border:2px solid transparent;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:.12s}
-.nivel-btn.n0{background:#F8FAFC;color:#94A3B8;border-color:#E2E8F0}
-.nivel-btn.n0.sel{background:#E2E8F0;color:#475569;border-color:#94A3B8}
+.nivel-btn.n0{background:var(--surface-2);color:var(--text-faint);border-color:var(--border)}
+.nivel-btn.n0.sel{background:var(--border);color:var(--text-soft);border-color:var(--text-faint)}
 .nivel-btn.n1{background:var(--danger-light);color:var(--danger-ink);border-color:var(--danger-soft)}
 .nivel-btn.n1.sel{background:var(--danger-soft);color:var(--danger-ink);border-color:var(--danger)}
 .nivel-btn.n2{background:var(--warning-light);color:var(--warning-ink);border-color:var(--warning-soft)}
@@ -1842,8 +1853,8 @@ function _buildPlanoCroquis(){
   svg+='<div style="margin-top:12px;font-size:11px;color:#475569;font-weight:600;margin-bottom:6px">Hacé click en el plano para marcar la ubicación. Completá las calles de referencia:</div>';
   svg+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
   svg+='<thead><tr>'+
-    '<th style="background:var(--primary);color:#fff;padding:5px 8px;text-align:left;border-radius:4px 0 0 0;font-size:11px">Nombre de calle</th>'+
-    '<th style="background:var(--primary);color:#fff;padding:5px 8px;text-align:left;border-radius:0 4px 0 0;font-size:11px;width:90px">Altura</th>'+
+    '<th style="background:var(--th-bg);color:var(--th-text);padding:5px 8px;text-align:left;border-radius:4px 0 0 0;font-size:11px">Nombre de calle</th>'+
+    '<th style="background:var(--th-bg);color:var(--th-text);padding:5px 8px;text-align:left;border-radius:0 4px 0 0;font-size:11px;width:90px">Altura</th>'+
   '</tr></thead><tbody>';
   var filas=[['Norte','map-calle-norte','map-alt-norte'],['Sur','map-calle-sur','map-alt-sur'],['Este','map-calle-este','map-alt-este'],['Oeste','map-calle-oeste','map-alt-oeste']];
   filas.forEach(function(f,i){
@@ -2277,12 +2288,12 @@ function renderMatriz(){
     var p=tabPuestos.find(function(x){return x.id===pid;})||{valor:'—'};
     var th=document.createElement('th');
     th.colSpan=puestoGroups[pid].length;
-    th.style.cssText='background:#4338CA;color:#fff;border-left:2px solid rgba(255,255,255,.3);font-size:11px';
+    th.style.cssText='background:var(--th-grupo-bg);color:var(--th-text);border-left:2px solid var(--th-linea);font-size:11px';
     th.textContent=p.valor;
     tr1.appendChild(th);
   });
   // Total col
-  var thTot=document.createElement('th');thTot.rowSpan=2;thTot.style.cssText='background:#312E81;color:#fff;min-width:50px';thTot.innerHTML='Total<br><span style="font-weight:400;font-size:9px;opacity:.7">promedio</span>';
+  var thTot=document.createElement('th');thTot.rowSpan=2;thTot.style.cssText='background:var(--th-total-bg);color:var(--th-text);min-width:50px';thTot.innerHTML='Total<br><span style="font-weight:400;font-size:9px;opacity:.7">promedio</span>';
   tr1.appendChild(thTot);
 
   // Header row 2: activity names
@@ -2290,7 +2301,7 @@ function renderMatriz(){
   puestoOrder.forEach(function(pid){
     puestoGroups[pid].forEach(function(act,ai){
       var th=document.createElement('th');
-      th.style.cssText='background:var(--primary);color:#fff;font-size:10px;font-weight:600;max-width:80px;border-left:'+(ai===0?'2px solid rgba(255,255,255,.3)':'1px solid rgba(255,255,255,.1)');
+      th.style.cssText='background:var(--th-bg);color:var(--th-text);font-size:10px;font-weight:600;max-width:80px;border-left:'+(ai===0?'2px solid var(--th-linea)':'1px solid var(--th-linea)');
       var abbr=act.nombre.length>18?act.nombre.substring(0,16)+'…':act.nombre;
       th.innerHTML='<span title="'+escHtml(act.nombre)+'">'+escHtml(abbr)+'</span>';
       tr2.appendChild(th);
@@ -3229,13 +3240,13 @@ function renderGantt(){
   var hdrRow=document.createElement('div');
   hdrRow.style.cssText='display:flex;border-bottom:2px solid var(--primary)';
   var hdrEmp=document.createElement('div');
-  hdrEmp.style.cssText='min-width:220px;flex-shrink:0;background:var(--primary);color:white;padding:9px 12px;font-size:11px;font-weight:700;letter-spacing:.5px';
+  hdrEmp.style.cssText='min-width:220px;flex-shrink:0;background:var(--th-bg);color:var(--th-text);padding:9px 12px;font-size:11px;font-weight:700;letter-spacing:.5px';
   hdrEmp.textContent='Empleado';
   hdrRow.appendChild(hdrEmp);
   var hdrMonths=document.createElement('div');hdrMonths.style.cssText='display:flex;flex:1';
   for(var mi=0;mi<12;mi++){
     var mEl=document.createElement('div');
-    mEl.style.cssText='flex:1;min-width:50px;background:var(--primary);color:rgba(255,255,255,.85);text-align:center;padding:9px 2px;font-size:10px;font-weight:700;border-left:1px solid rgba(255,255,255,.15)';
+    mEl.style.cssText='flex:1;min-width:50px;background:var(--th-bg);color:var(--th-text);text-align:center;padding:9px 2px;font-size:10px;font-weight:700;border-left:1px solid var(--th-linea)';
     mEl.textContent=MESES_CORTO[mi];
     hdrMonths.appendChild(mEl);
   }
