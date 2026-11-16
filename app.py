@@ -53,7 +53,7 @@ MAX_CUERPO = 4 * 1024 * 1024          # Vercel acepta hasta 4,5 MB por pedido
 RESPALDOS_A_CONSERVAR = 30
 INTENTOS_LOGIN = 8                    # por usuario cada 15 minutos
 COOKIE = "logitex_sesion"
-COLECCIONES = ["vacPeriodos", "evalData", "empEquiposData", "fotos", "ausencias", "tabPlantas",
+COLECCIONES = ["vacPeriodos", "evalData", "empEquiposData", "fotos", "ausencias", "tabTiposExtra", "tabPlantas",
                "tabSectores", "tabPuestos", "tabActividades", "inventarioITAplicado"]
 
 DIR_RAIZ = os.path.dirname(os.path.abspath(__file__))
@@ -267,7 +267,7 @@ def _usuario_publico(r):
 COLECCIONES_POR_EMPLEADO = ("vacPeriodos", "evalData", "empEquiposData", "fotos", "ausencias")
 TIPOS_EXTRA = {"ausencia": "Ausencia", "enfermedad": "Ausencia por enfermedad", "lic_extra": "Licencia extraordinaria",
                "lic_examen": "Licencia por examen", "susp_disc": "Suspensión disciplinaria", "susp_planta": "Suspensión de planta"}
-COLECCIONES_COMPARTIDAS = ("tabPlantas", "tabSectores", "tabPuestos", "tabActividades", "inventarioITAplicado")
+COLECCIONES_COMPARTIDAS = ("tabPlantas", "tabSectores", "tabPuestos", "tabActividades", "tabTiposExtra", "inventarioITAplicado")
 
 
 def _norm(texto):
@@ -948,7 +948,9 @@ def api_excel():
             fila += 1
     # Hoja de extraordinarias (ausencias, licencias y suspensiones)
     with Db() as db:
-        aus = leer_datos(db, u).get("ausencias") or {}
+        todo = leer_datos(db, u)
+    aus = todo.get("ausencias") or {}
+    nombres_tipo = _nombres_tipos(todo)
     por_id = {e["id"]: e for e in empleados}
     x = libro.create_sheet("Extraordinarias")
     encab = (("Legajo", 12), ("Empleado", 28), ("Planta", 14), ("Sector", 14), ("Tipo", 26),
@@ -969,7 +971,7 @@ def api_excel():
             except ValueError:
                 continue
             filas.append((d1, [str(e.get("legajo", "")), e.get("nombre", ""), e.get("planta", ""), e.get("sector", ""),
-                               TIPOS_EXTRA.get(r_.get("tipo"), r_.get("tipo", "")), d1, d2, (d2 - d1).days + 1, r_.get("obs", "")]))
+                               nombres_tipo.get(r_.get("tipo"), r_.get("tipo", "")), d1, d2, (d2 - d1).days + 1, r_.get("obs", "")]))
     for n, (_, fila_x) in enumerate(sorted(filas, key=lambda t: t[0]), 2):
         for col, v in enumerate(fila_x, 1):
             c = x.cell(row=n, column=col, value=v)
@@ -982,6 +984,154 @@ def api_excel():
     libro.save(buf)
     buf.seek(0)
     return send_file(buf, as_attachment=True, download_name=_nombre("xlsx"),
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+def _nombres_tipos(datos):
+    """Tipos de extraordinarias del Maestro de Datos (id -> nombre), en su orden."""
+    lista = datos.get("tabTiposExtra")
+    if isinstance(lista, list) and lista:
+        return {str(t.get("id")): str(t.get("valor", "")) for t in lista if isinstance(t, dict)}
+    return dict(TIPOS_EXTRA)
+
+
+@app.get("/api/exportar/extraordinarias")
+def api_resumen_extra():
+    """Excel con la cantidad de registros y los días de cada tipo de extraordinaria por colaborador en un año."""
+    u = requiere_usuario()
+    if not XLSX:
+        raise ErrorAPI(500, "Falta openpyxl en requirements.txt.")
+    try:
+        anio = int(request.args.get("anio") or datetime.date.today().year)
+    except ValueError:
+        raise ErrorAPI(400, "Año inválido.")
+    ini, fin = datetime.date(anio, 1, 1), datetime.date(anio, 12, 31)
+    with Db() as db:
+        datos = leer_datos(db, u)
+    tipos = _nombres_tipos(datos)
+    aus = datos.get("ausencias") or {}
+    por_id = {e["id"]: e for e in datos["empleados"]}
+    filas = {}     # id empleado -> {tipo: [registros, días]}
+    detalle = []
+    for emp_id, regs in (aus.items() if isinstance(aus, dict) else []):
+        e = por_id.get(emp_id)
+        if not e or not isinstance(regs, list):
+            continue
+        for r_ in regs:
+            try:
+                d1 = datetime.date.fromisoformat(r_.get("desde", ""))
+                d2 = datetime.date.fromisoformat(r_.get("hasta", ""))
+            except ValueError:
+                continue
+            a, b = max(d1, ini), min(d2, fin)
+            if a > b:
+                continue
+            dias = (b - a).days + 1
+            t = r_.get("tipo", "")
+            acum = filas.setdefault(emp_id, {}).setdefault(t, [0, 0])
+            acum[0] += 1
+            acum[1] += dias
+            detalle.append((d1, [str(e.get("legajo", "")), e.get("nombre", ""), e.get("planta", ""), tipos.get(t, t),
+                                 d1, d2, dias, r_.get("obs", "")]))
+    # Tipos en orden del Maestro, más los que ya no existen pero tienen registros
+    orden = list(tipos)
+    for v in filas.values():
+        for t in v:
+            if t not in orden:
+                orden.append(t)
+    libro = openpyxl.Workbook()
+    linea = Side(style="thin", color="E5E7EB")
+    borde = Border(left=linea, right=linea, top=linea, bottom=linea)
+    enc_fill, sub_fill = PatternFill("solid", fgColor="4F46E5"), PatternFill("solid", fgColor="EEF2FF")
+    blanco, negrita = Font(bold=True, color="FFFFFF"), Font(bold=True)
+    centro = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    h = libro.active
+    h.title = "Resumen"
+    h["A1"] = f"Extraordinarias por colaborador — {anio}"
+    h["A1"].font = Font(bold=True, size=14, color="4F46E5")
+    h["A2"] = "Cant. = cantidad de registros · Días = días corridos dentro del año"
+    h["A2"].font = Font(italic=True, color="6B7280")
+    fijas = (("Legajo", 12), ("Colaborador", 30), ("Planta", 14), ("Sector", 14), ("Estado", 10))
+    col = 1
+    for enc, ancho in fijas:
+        h.merge_cells(start_row=4, start_column=col, end_row=5, end_column=col)
+        c = h.cell(row=4, column=col, value=enc)
+        c.font, c.fill, c.alignment = blanco, enc_fill, centro
+        h.column_dimensions[get_column_letter(col)].width = ancho
+        col += 1
+    for t in orden + ["__total"]:
+        nombre = "Total" if t == "__total" else (tipos.get(t) or f"{t} (tipo eliminado)")
+        h.merge_cells(start_row=4, start_column=col, end_row=4, end_column=col + 1)
+        c = h.cell(row=4, column=col, value=nombre)
+        c.font, c.fill, c.alignment = blanco, enc_fill, centro
+        for k, sub in enumerate(("Cant.", "Días")):
+            s_ = h.cell(row=5, column=col + k, value=sub)
+            s_.font, s_.fill, s_.alignment = negrita, sub_fill, centro
+            h.column_dimensions[get_column_letter(col + k)].width = 9
+        col += 2
+    h.row_dimensions[4].height = 32
+    ultima_col = col - 1
+    for cc in range(1, ultima_col + 1):
+        for rr in (4, 5):
+            h.cell(row=rr, column=cc).border = borde
+    emps = sorted((por_id[i] for i in filas), key=lambda e: e.get("nombre", ""))
+    fila = 6
+    totales = {t: [0, 0] for t in orden}
+    for e in emps:
+        v = filas[e["id"]]
+        valores = [str(e.get("legajo", "")), e.get("nombre", ""), e.get("planta", ""), e.get("sector", ""),
+                   "Activo" if _es_activo(e) else "Baja"]
+        tr, td = 0, 0
+        for t in orden:
+            cnt, dias = v.get(t, [0, 0])
+            valores += [cnt or None, dias or None]
+            tr += cnt
+            td += dias
+            totales[t][0] += cnt
+            totales[t][1] += dias
+        valores += [tr, td]
+        for cc, val in enumerate(valores, 1):
+            c = h.cell(row=fila, column=cc, value=val)
+            c.border = borde
+            if cc > 5:
+                c.alignment = Alignment(horizontal="center")
+            if cc >= ultima_col - 1:
+                c.font = negrita
+        fila += 1
+    # Fila de totales
+    h.cell(row=fila, column=2, value="TOTAL").font = negrita
+    cc = 6
+    for t in orden:
+        for val in totales[t]:
+            c = h.cell(row=fila, column=cc, value=val)
+            c.font, c.fill, c.border, c.alignment = negrita, sub_fill, borde, Alignment(horizontal="center")
+            cc += 1
+    for val in (sum(x[0] for x in totales.values()), sum(x[1] for x in totales.values())):
+        c = h.cell(row=fila, column=cc, value=val)
+        c.font, c.fill, c.border, c.alignment = negrita, sub_fill, borde, Alignment(horizontal="center")
+        cc += 1
+    if not emps:
+        h.cell(row=6, column=2, value="Sin registros en el año.")
+    h.freeze_panes = "C6"
+    d = libro.create_sheet("Detalle")
+    enc_d = (("Legajo", 12), ("Colaborador", 30), ("Planta", 14), ("Tipo", 26), ("Desde", 12), ("Hasta", 12),
+             ("Días en el año", 10), ("Observaciones", 40))
+    for cc, (enc, ancho) in enumerate(enc_d, 1):
+        c = d.cell(row=1, column=cc, value=enc)
+        c.font, c.fill, c.border, c.alignment = blanco, enc_fill, borde, centro
+        d.column_dimensions[get_column_letter(cc)].width = ancho
+    for n, (_, vals) in enumerate(sorted(detalle, key=lambda x: x[0]), 2):
+        for cc, val in enumerate(vals, 1):
+            c = d.cell(row=n, column=cc, value=val)
+            c.border = borde
+            if cc in (5, 6):
+                c.number_format = "DD/MM/YYYY"
+    d.freeze_panes = "C2"
+    d.auto_filter.ref = f"A1:H{max(1, len(detalle) + 1)}"
+    buf = io.BytesIO()
+    libro.save(buf)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True, download_name=f"Extraordinarias_por_colaborador_{anio}.xlsx",
                      mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
