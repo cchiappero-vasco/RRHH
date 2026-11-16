@@ -830,7 +830,7 @@ CAMPOS = [
     ("celularLab", "Celular laboral", 16), ("cobertura", "Cobertura médica", 16), ("idioma", "Idioma", 16),
     ("direccion", "Dirección", 40), ("banco", "Banco", 14), ("cbu", "CBU", 24), ("alias", "Alias CBU", 18),
     ("consultora", "Consultora", 16), ("consultoraInicio", "Inicio consultora", 14), ("consultoraFin", "Fin consultora", 14),
-    ("motivoBaja", "Motivo de baja", 22), ("telFamiliar", "Tel. contacto familiar", 18),
+    ("motivoBaja", "Motivo de baja", 22), ("telFamiliar", "Tel. contacto familiar", 18), ("nombreFamiliar", "Nombre contacto familiar", 24),
     ("relacionFamiliar", "Relación contacto", 16), ("estadoCivil", "Estado civil", 18), ("hijos", "Hijos", 8),
 ]
 FECHAS = {"fechaNac", "inicio", "fin", "consultoraInicio", "consultoraFin"}
