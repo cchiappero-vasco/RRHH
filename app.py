@@ -53,7 +53,7 @@ MAX_CUERPO = 4 * 1024 * 1024          # Vercel acepta hasta 4,5 MB por pedido
 RESPALDOS_A_CONSERVAR = 30
 INTENTOS_LOGIN = 8                    # por usuario cada 15 minutos
 COOKIE = "logitex_sesion"
-COLECCIONES = ["vacPeriodos", "evalData", "empEquiposData", "fotos", "tabPlantas",
+COLECCIONES = ["vacPeriodos", "evalData", "empEquiposData", "fotos", "ausencias", "tabPlantas",
                "tabSectores", "tabPuestos", "tabActividades", "inventarioITAplicado"]
 
 DIR_RAIZ = os.path.dirname(os.path.abspath(__file__))
@@ -264,7 +264,9 @@ def _usuario_publico(r):
 
 # ── Plantas visibles por usuario ──
 # Administrador: todas. Operador sin plantas asignadas: todas. Operador con plantas: solo esas.
-COLECCIONES_POR_EMPLEADO = ("vacPeriodos", "evalData", "empEquiposData", "fotos")
+COLECCIONES_POR_EMPLEADO = ("vacPeriodos", "evalData", "empEquiposData", "fotos", "ausencias")
+TIPOS_EXTRA = {"ausencia": "Ausencia", "enfermedad": "Ausencia por enfermedad", "lic_extra": "Licencia extraordinaria",
+               "lic_examen": "Licencia por examen", "susp_disc": "Suspensión disciplinaria", "susp_planta": "Suspensión de planta"}
 COLECCIONES_COMPARTIDAS = ("tabPlantas", "tabSectores", "tabPuestos", "tabActividades", "inventarioITAplicado")
 
 
@@ -944,6 +946,38 @@ def api_excel():
             r.cell(row=fila, column=1, value=k)
             r.cell(row=fila, column=2, value=conteo[k])
             fila += 1
+    # Hoja de extraordinarias (ausencias, licencias y suspensiones)
+    with Db() as db:
+        aus = leer_datos(db, u).get("ausencias") or {}
+    por_id = {e["id"]: e for e in empleados}
+    x = libro.create_sheet("Extraordinarias")
+    encab = (("Legajo", 12), ("Empleado", 28), ("Planta", 14), ("Sector", 14), ("Tipo", 26),
+             ("Desde", 12), ("Hasta", 12), ("Días", 8), ("Observaciones", 40))
+    for col, (enc, ancho) in enumerate(encab, 1):
+        c = x.cell(row=1, column=col, value=enc)
+        c.font, c.fill, c.border = Font(bold=True, color="FFFFFF"), PatternFill("solid", fgColor="6366F1"), borde
+        x.column_dimensions[get_column_letter(col)].width = ancho
+    filas = []
+    for emp_id, regs in (aus.items() if isinstance(aus, dict) else []):
+        e = por_id.get(emp_id)
+        if not e or not isinstance(regs, list):
+            continue
+        for r_ in regs:
+            try:
+                d1 = datetime.date.fromisoformat(r_.get("desde", ""))
+                d2 = datetime.date.fromisoformat(r_.get("hasta", ""))
+            except ValueError:
+                continue
+            filas.append((d1, [str(e.get("legajo", "")), e.get("nombre", ""), e.get("planta", ""), e.get("sector", ""),
+                               TIPOS_EXTRA.get(r_.get("tipo"), r_.get("tipo", "")), d1, d2, (d2 - d1).days + 1, r_.get("obs", "")]))
+    for n, (_, fila_x) in enumerate(sorted(filas, key=lambda t: t[0]), 2):
+        for col, v in enumerate(fila_x, 1):
+            c = x.cell(row=n, column=col, value=v)
+            c.border = borde
+            if col in (6, 7):
+                c.number_format = "DD/MM/YYYY"
+    x.freeze_panes = "C2"
+    x.auto_filter.ref = f"A1:I{max(1, len(filas) + 1)}"
     buf = io.BytesIO()
     libro.save(buf)
     buf.seek(0)
