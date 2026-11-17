@@ -1002,10 +1002,21 @@ def api_resumen_extra():
     if not XLSX:
         raise ErrorAPI(500, "Falta openpyxl en requirements.txt.")
     try:
-        anio = int(request.args.get("anio") or datetime.date.today().year)
+        if request.args.get("desde") and request.args.get("hasta"):
+            ini = datetime.date.fromisoformat(request.args["desde"])
+            fin = datetime.date.fromisoformat(request.args["hasta"])
+        else:
+            anio = int(request.args.get("anio") or datetime.date.today().year)
+            ini, fin = datetime.date(anio, 1, 1), datetime.date(anio, 12, 31)
     except ValueError:
-        raise ErrorAPI(400, "Año inválido.")
-    ini, fin = datetime.date(anio, 1, 1), datetime.date(anio, 12, 31)
+        raise ErrorAPI(400, "Rango de fechas inválido.")
+    if fin < ini:
+        ini, fin = fin, ini
+    if (fin - ini).days > 3 * 366:
+        raise ErrorAPI(400, "El rango no puede superar los 36 meses.")
+    un_anio = ini.month == 1 and ini.day == 1 and fin.month == 12 and fin.day == 31 and ini.year == fin.year
+    periodo = str(ini.year) if un_anio else f"{ini.strftime('%m/%Y')} a {fin.strftime('%m/%Y')}"
+    sufijo = str(ini.year) if un_anio else f"{ini.strftime('%Y-%m')}_{fin.strftime('%Y-%m')}"
     with Db() as db:
         datos = leer_datos(db, u)
     tipos = _nombres_tipos(datos)
@@ -1047,9 +1058,9 @@ def api_resumen_extra():
     centro = Alignment(horizontal="center", vertical="center", wrap_text=True)
     h = libro.active
     h.title = "Resumen"
-    h["A1"] = f"Extraordinarias por colaborador — {anio}"
+    h["A1"] = f"Extraordinarias por colaborador — {periodo}"
     h["A1"].font = Font(bold=True, size=14, color="4F46E5")
-    h["A2"] = "Cant. = cantidad de registros · Días = días corridos dentro del año"
+    h["A2"] = "Cant. = cantidad de registros · Días = días corridos dentro del período"
     h["A2"].font = Font(italic=True, color="6B7280")
     fijas = (("Legajo", 12), ("Colaborador", 30), ("Planta", 14), ("Sector", 14), ("Estado", 10))
     col = 1
@@ -1111,11 +1122,11 @@ def api_resumen_extra():
         c.font, c.fill, c.border, c.alignment = negrita, sub_fill, borde, Alignment(horizontal="center")
         cc += 1
     if not emps:
-        h.cell(row=6, column=2, value="Sin registros en el año.")
+        h.cell(row=6, column=2, value="Sin registros en el período.")
     h.freeze_panes = "C6"
     d = libro.create_sheet("Detalle")
     enc_d = (("Legajo", 12), ("Colaborador", 30), ("Planta", 14), ("Tipo", 26), ("Desde", 12), ("Hasta", 12),
-             ("Días en el año", 10), ("Observaciones", 40))
+             ("Días en el período", 10), ("Observaciones", 40))
     for cc, (enc, ancho) in enumerate(enc_d, 1):
         c = d.cell(row=1, column=cc, value=enc)
         c.font, c.fill, c.border, c.alignment = blanco, enc_fill, borde, centro
@@ -1131,7 +1142,7 @@ def api_resumen_extra():
     buf = io.BytesIO()
     libro.save(buf)
     buf.seek(0)
-    return send_file(buf, as_attachment=True, download_name=f"Extraordinarias_por_colaborador_{anio}.xlsx",
+    return send_file(buf, as_attachment=True, download_name=f"Extraordinarias_por_colaborador_{sufijo}.xlsx",
                      mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
