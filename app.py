@@ -23,6 +23,8 @@ import datetime
 import hashlib
 import hmac
 import io
+import base64
+import re
 import json
 import os
 import secrets
@@ -53,7 +55,7 @@ MAX_CUERPO = 4 * 1024 * 1024          # Vercel acepta hasta 4,5 MB por pedido
 RESPALDOS_A_CONSERVAR = 30
 INTENTOS_LOGIN = 8                    # por usuario cada 15 minutos
 COOKIE = "logitex_sesion"
-COLECCIONES = ["vacPeriodos", "evalData", "empEquiposData", "fotos", "ausencias", "tabTiposExtra", "tabPlantas",
+COLECCIONES = ["vacPeriodos", "evalData", "empEquiposData", "fotos", "ausencias", "tabTiposExtra", "tabCoberturas", "tabPlantas",
                "tabSectores", "tabPuestos", "tabActividades", "inventarioITAplicado"]
 
 DIR_RAIZ = os.path.dirname(os.path.abspath(__file__))
@@ -267,7 +269,7 @@ def _usuario_publico(r):
 COLECCIONES_POR_EMPLEADO = ("vacPeriodos", "evalData", "empEquiposData", "fotos", "ausencias")
 TIPOS_EXTRA = {"ausencia": "Ausencia", "enfermedad": "Ausencia por enfermedad", "lic_extra": "Licencia extraordinaria",
                "lic_examen": "Licencia por examen", "susp_disc": "Suspensión disciplinaria", "susp_planta": "Suspensión de planta"}
-COLECCIONES_COMPARTIDAS = ("tabPlantas", "tabSectores", "tabPuestos", "tabActividades", "tabTiposExtra", "inventarioITAplicado")
+COLECCIONES_COMPARTIDAS = ("tabPlantas", "tabSectores", "tabPuestos", "tabActividades", "tabTiposExtra", "tabCoberturas", "inventarioITAplicado")
 
 
 def _norm(texto):
@@ -708,6 +710,95 @@ def api_importar():
     return jsonify(ok=True, version=nueva)
 
 
+# ── Importar usuario de sistema y correo laboral desde un Excel ──
+_PALABRAS_SUELTAS = {"de", "del", "la", "las", "los", "y"}
+
+
+def _tokens_nombre(nombre):
+    return {t for t in re.split(r"[^a-z0-9]+", _norm(nombre)) if t and t not in _PALABRAS_SUELTAS}
+
+
+def _buscar_empleado(nombre, empleados):
+    """Empareja por palabras del nombre, sin importar el orden, los acentos ni las mayúsculas.
+    Coincide si todas las palabras del nombre más corto están en el otro."""
+    t = _tokens_nombre(nombre)
+    if not t:
+        return None, []
+    candidatos = []
+    for e in empleados:
+        te = _tokens_nombre(e.get("nombre", ""))
+        if te and (te <= t or t <= te) and len(te & t) >= 2:
+            candidatos.append((len(te & t), e))
+    if not candidatos:
+        return None, []
+    candidatos.sort(key=lambda x: -x[0])
+    mejores = [e for n, e in candidatos if n == candidatos[0][0]]
+    return (mejores[0] if len(mejores) == 1 else None), mejores
+
+
+@app.post("/api/importar/usuarios-red")
+def api_importar_usuarios_red():
+    """Lee un Excel (nombre, usuario de red, correo) y completa usuarioRed y emailLaboral en las fichas.
+    Con aplicar=false solo devuelve la vista previa."""
+    u = requiere_usuario(admin=True)
+    cuerpo = leer_json()
+    if not XLSX:
+        raise ErrorAPI(500, "Falta openpyxl en requirements.txt.")
+    try:
+        contenido = base64.b64decode(str(cuerpo.get("archivo") or "").split(",")[-1])
+        libro = openpyxl.load_workbook(io.BytesIO(contenido), read_only=True, data_only=True)
+    except Exception:
+        raise ValueError("No se pudo leer el archivo. Tiene que ser un Excel (.xlsx).")
+    hoja = libro.worksheets[0]
+    filas = [r for r in hoja.iter_rows(values_only=True) if r and any(c not in (None, "") for c in r)]
+    if not filas:
+        raise ValueError("El Excel está vacío.")
+    # Columnas: se detectan por el encabezado; si no, nombre / usuario / correo en ese orden
+    enc = [_norm(c) for c in filas[0]]
+    def col(*claves, defecto):
+        for i, c in enumerate(enc):
+            if any(k in c for k in claves):
+                return i
+        return defecto
+    c_nom = col("nombre", defecto=0)
+    c_mail = col("correo", "mail", defecto=2)
+    c_usr = next((i for i, c in enumerate(enc) if i not in (c_nom, c_mail) and any(k in c for k in ("usuario", "red", "user", "legajo"))),
+                 next((i for i in range(len(enc)) if i not in (c_nom, c_mail)), 1))
+    datos_filas = filas[1:] if any(k in " ".join(enc) for k in ("nombre", "usuario", "correo", "mail")) else filas
+    with Db() as db:
+        empleados = leer_datos(db, u)["empleados"]
+        resultado, cambios, usados = [], [], set()
+        for r in datos_filas:
+            nombre = str(r[c_nom] or "").strip() if len(r) > c_nom else ""
+            usuario = str(r[c_usr] or "").strip() if len(r) > c_usr else ""
+            correo = str(r[c_mail] or "").strip().lower() if len(r) > c_mail else ""
+            if not nombre:
+                continue
+            e, opciones = _buscar_empleado(nombre, empleados)
+            fila = {"nombre": nombre, "usuario": usuario, "correo": correo}
+            if e and e["id"] in usados:
+                fila.update(estado="repetido", empleado=e.get("nombre"))
+            elif e:
+                usados.add(e["id"])
+                antes = (e.get("usuarioRed") or "", e.get("emailLaboral") or "")
+                fila.update(estado="igual" if antes == (usuario, correo) else "ok", empleado=e.get("nombre"),
+                            legajo=e.get("legajo"), planta=e.get("planta"))
+                if antes != (usuario, correo):
+                    nuevo = dict(e, usuarioRed=usuario, emailLaboral=correo)
+                    cambios.append({"datos": nuevo, "campos": ["usuarioRed", "emailLaboral"]})
+            elif opciones:
+                fila.update(estado="dudoso", opciones=[o.get("nombre") for o in opciones[:4]])
+            else:
+                fila["estado"] = "sin_coincidencia"
+            resultado.append(fila)
+        version = None
+        if cuerpo.get("aplicar") and cambios:
+            version_datos(db, bloquear=True)
+            version, _ = aplicar_cambios(db, {"empleados": {"guardar": cambios, "borrar": []}}, u)
+            registrar(db, u["username"], "importar", f"usuarios de sistema y correos: {len(cambios)} empleados")
+    return jsonify(ok=True, filas=resultado, cambios=len(cambios), aplicado=bool(cuerpo.get("aplicar") and cambios), version=version)
+
+
 # =============================================================================
 # USUARIOS
 # =============================================================================
@@ -827,10 +918,10 @@ CAMPOS = [
     ("empresa", "Empresa", 12), ("planta", "Planta", 12), ("sector", "Sector", 12), ("puesto", "Puesto", 22),
     ("categoria", "Categoría", 13), ("fechaNac", "Fecha nac.", 12), ("inicio", "Ingreso", 12), ("fin", "Egreso", 12),
     ("_antiguedad", "Antigüedad", 12), ("_estado", "Estado", 10), ("celular", "Celular personal", 16),
-    ("celularLab", "Celular laboral", 16), ("cobertura", "Cobertura médica", 16), ("idioma", "Idioma", 16),
+    ("celularLab", "Celular laboral", 16), ("cobertura", "Cobertura médica", 22), ("plan", "Plan", 14), ("idioma", "Idioma", 16),
     ("direccion", "Dirección", 40), ("banco", "Banco", 14), ("cbu", "CBU", 24), ("alias", "Alias CBU", 18),
     ("consultora", "Consultora", 16), ("consultoraInicio", "Inicio consultora", 14), ("consultoraFin", "Fin consultora", 14),
-    ("motivoBaja", "Motivo de baja", 22), ("telFamiliar", "Tel. contacto familiar", 18), ("nombreFamiliar", "Nombre contacto familiar", 24),
+    ("motivoBaja", "Motivo de baja", 22), ("usuarioRed", "Usuario de sistema", 14), ("emailLaboral", "Correo laboral", 32), ("telFamiliar", "Tel. contacto familiar", 18), ("nombreFamiliar", "Nombre contacto familiar", 24),
     ("relacionFamiliar", "Relación contacto", 16), ("estadoCivil", "Estado civil", 18), ("hijos", "Hijos", 8),
 ]
 FECHAS = {"fechaNac", "inicio", "fin", "consultoraInicio", "consultoraFin"}
