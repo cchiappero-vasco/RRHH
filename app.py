@@ -799,6 +799,49 @@ def api_importar_usuarios_red():
     return jsonify(ok=True, filas=resultado, cambios=len(cambios), aplicado=bool(cuerpo.get("aplicar") and cambios), version=version)
 
 
+@app.post("/api/leer-excel-coberturas")
+def api_leer_excel_coberturas():
+    """Lee un Excel de coberturas médicas (entidad, código, RNAS) y devuelve las filas.
+    No guarda nada: la página muestra la vista previa y guarda en el Maestro de Datos."""
+    requiere_usuario(admin=True)
+    cuerpo = leer_json()
+    if not XLSX:
+        raise ErrorAPI(500, "Falta openpyxl en requirements.txt.")
+    try:
+        contenido = base64.b64decode(str(cuerpo.get("archivo") or "").split(",")[-1])
+        hoja = openpyxl.load_workbook(io.BytesIO(contenido), read_only=True, data_only=True).worksheets[0]
+    except Exception:
+        raise ValueError("No se pudo leer el archivo. Tiene que ser un Excel (.xlsx).")
+    filas = [r for r in hoja.iter_rows(values_only=True) if r and any(c not in (None, "") for c in r)]
+    if not filas:
+        raise ValueError("El Excel está vacío.")
+    enc = [_norm(c) for c in filas[0]]
+    con_encabezado = any(k in " ".join(enc) for k in ("entidad", "prestadora", "nombre", "codigo", "rnas"))
+    def buscar(cond, defecto):
+        return next((i for i, c in enumerate(enc) if cond(c)), defecto)
+    c_nom = buscar(lambda c: any(k in c for k in ("entidad", "prestadora", "nombre", "cobertura")), 0)
+    c_rnas = buscar(lambda c: "rnas" in c or "registro" in c, 2)
+    c_cod = buscar(lambda c: ("codigo" in c or "afip" in c or "arca" in c) and "rnas" not in c, 1)
+    def texto(r, i):
+        v = r[i] if len(r) > i else None
+        if v is None:
+            return ""
+        if isinstance(v, float) and v.is_integer():
+            v = int(v)
+        v = str(v).strip()
+        return "" if v in ("—", "-", "–") else v
+    salida = []
+    for r in (filas[1:] if con_encabezado else filas):
+        nombre = texto(r, c_nom)
+        if not nombre:
+            continue
+        rnas = texto(r, c_rnas)
+        if rnas.upper().startswith("RNAS"):
+            rnas = rnas[4:].strip()
+        salida.append({"nombre": nombre, "codigo": texto(r, c_cod), "rnas": rnas})
+    return jsonify(ok=True, filas=salida)
+
+
 # =============================================================================
 # USUARIOS
 # =============================================================================
