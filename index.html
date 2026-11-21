@@ -732,6 +732,8 @@ td strong,td b{color:var(--text)}
 .ex-badge{background:color-mix(in srgb,var(--c) 14%,var(--card));color:var(--text)}
 .ex-dot{width:8px;height:8px;border-radius:50%;background:var(--c);display:inline-block}
 .ex-obs{max-width:280px;color:var(--text-2);font-size:12.5px;white-space:normal}
+.bday-item-fecha{font-size:12px;font-weight:700;color:var(--orange);margin:1px 0}
+.bday-item-fecha i{font-size:10px;margin-right:2px}
 .ex-bar{cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.15)}
 .tipo-color{border:1px solid var(--border);border-radius:7px;padding:5px 8px;background:var(--card);color:var(--text);font-size:12.5px;font-family:inherit}
 .x-dias{font-size:13px;color:var(--text-2)}
@@ -2285,11 +2287,13 @@ function showBirthdayPanel(){
     var diff=Math.round((cumple-hoyN)/864e5);
     // Edad que cumple en ese cumpleaños = año del cumpleaños - año de nacimiento
     var edad=cumple.getFullYear()-parseInt(fp[0]);
-    if(diff===0)alerts.push({e:e,diff:0,edad:edad,lab:'¡HOY cumple años!'});
-    else if(diff<=7)proximos.push({e:e,diff:diff,edad:edad,lab:'En '+diff+' día'+(diff!==1?'s':'')});
+    var fecha=fp[2].slice(0,2)+'/'+fp[1];
+    if(diff===0)alerts.push({e:e,diff:0,edad:edad,fecha:fecha,lab:'¡HOY cumple años!'});
+    else if(diff<=7)proximos.push({e:e,diff:diff,edad:edad,fecha:fecha,lab:'En '+diff+' día'+(diff!==1?'s':'')});
   });
   var wrap=document.getElementById('bday-panel-wrap');
   if(!wrap)return;
+  proximos.sort(function(a,b){return a.diff-b.diff;});
   var allItems=alerts.concat(proximos);
   if(!allItems.length){wrap.innerHTML='';return;}
   var alertHtml='';
@@ -2301,7 +2305,8 @@ function showBirthdayPanel(){
     return '<div class="bday-item'+(a.diff===0?' hoy':'')+'" style="margin-right:8px;min-width:200px;flex-shrink:0">'+
       '<span style="font-size:18px">'+(a.diff===0?'<i class="fa-solid fa-cake-candles"></i>':'&#127880;')+'</span>'+
       '<div><div class="bday-item-name">'+escBday(a.e.nombre)+'</div>'+
-      '<div class="bday-item-info">'+a.lab+' &nbsp;·&nbsp; '+a.edad+' años &nbsp;·&nbsp; '+a.e.planta+'</div></div>'+
+      '<div class="bday-item-fecha" data-noi18n><i class="fa-solid fa-cake-candles"></i> '+a.fecha+'</div>'+
+      '<div class="bday-item-info">'+a.lab+' &nbsp;·&nbsp; '+a.edad+' años &nbsp;·&nbsp; '+escBday(a.e.planta||'')+'</div></div>'+
     '</div>';
   }).join('');
   wrap.innerHTML=alertHtml+
